@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 
 import { Button } from '../components/ui/Button'
+import { Navbar } from '../components/ui/Navbar'
 
 const MOCK_ITEMS = [
   {
@@ -56,52 +57,8 @@ export function Homepage({ navigate }: HomepageProps) {
 
   return (
     <div className="min-h-screen bg-[#0E0D0B] text-[#F0EAD6]">
-      {/* Header section with logo and navigation buttons*/}
-      <header className="flex items-center justify-between border-b border-[#2A2925] px-8 py-5">
-
-        {/* Logo */}
-
-        <button
-          onClick={() => navigate('home')}
-          className="text-2xl font-bold"
-          style={{
-            fontFamily: 'Fraunces, serif',
-          }}
-        >
-          Findory
-        </button>
-
-        {/* Navigation */}
-
-        <nav className="flex items-center gap-5">
-
-          <button
-            onClick={() => navigate('browse')}
-            className="mono text-xs uppercase tracking-[0.2em] text-[#6B6560] transition-colors hover:text-[#F0EAD6]"
-          >
-            Browse
-          </button>
-
-          <button
-            onClick={() => navigate('login')}
-            className="mono text-xs uppercase tracking-[0.2em] text-[#6B6560] transition-colors hover:text-[#F0EAD6]"
-          >
-            Sign in
-          </button>
-
-          <Button
-            size="sm"
-            variant="primary"
-            onClick={() => navigate('register')}
-            className="mono text-xs"
-          >
-            Join
-            <ArrowRight size={13} />
-          </Button>
-
-        </nav>
-
-      </header>
+      {/* Navigation */}
+      <Navbar navigate={navigate} />
 
 
       {/* HERO SECTION */}
