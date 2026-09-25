@@ -27,3 +27,8 @@ backend/.env
 .idea/
 .DS_Store
 Thumbs.db
+
+# Dependencies and build caches
+node_modules/
+.vite/
+dist/
