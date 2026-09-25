@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react'
-import { Search, X, ArrowRight, ArrowLeft } from 'lucide-react'
+import { Search, X, ArrowLeft } from 'lucide-react'
 import { ItemCard } from '../components/ui/ItemCard'
 import type { Item } from '../components/ui/ItemCard'
-import { Button } from '../components/ui/Button'
+import { Navbar } from '../components/ui/Navbar'
 
 const CATEGORIES = ['Electronics', 'Personal', 'Apparel', 'Books', 'Accessories']
 
@@ -105,60 +105,23 @@ export function BrowsePage({ navigate }: BrowsePageProps) {
 
   return (
     <div className="flex-1 min-h-screen bg-[#FAF6EC] text-[#0E0D0B] dark:bg-[#0E0D0B] dark:text-[#F0EAD6] transition-colors flex flex-col">
-      {/* Header section with logo and navigation buttons */}
-      <header className="flex items-center justify-between border-b border-[#C4BAA6] dark:border-[#2A2925] px-8 py-5 shrink-0 bg-[#FAF6EC] dark:bg-[#0E0D0B]">
-        {/* Logo */}
-        <button
-          onClick={() => navigate('home')}
-          className="text-2xl font-bold text-[#0E0D0B] dark:text-[#F0EAD6] cursor-pointer"
-          style={{
-            fontFamily: 'Fraunces, serif',
-          }}
-        >
-          Findory
-        </button>
-
-        {/* Navigation */}
-        <nav className="flex items-center gap-5">
-          <button
-            onClick={() => navigate('browse')}
-            className="mono text-xs uppercase tracking-[0.2em] text-[#D93B2B] font-bold transition-colors cursor-pointer"
-          >
-            Browse
-          </button>
-
-          <button
-            onClick={() => navigate('login')}
-            className="mono text-xs uppercase tracking-[0.2em] text-[#524B43] dark:text-[#6B6560] transition-colors hover:text-[#0E0D0B] dark:hover:text-[#F0EAD6] cursor-pointer"
-          >
-            Sign in
-          </button>
-
-          <Button
-            size="sm"
-            variant="primary"
-            onClick={() => navigate('register')}
-            className="mono text-xs"
-          >
-            Join
-            <ArrowRight size={13} />
-          </Button>
-        </nav>
-      </header>
+      {/* Navigation */}
+      <Navbar navigate={navigate} activePage="browse" />
 
       {/* Header section with Back Button and Page Title */}
       <div className="border-b border-[#C4BAA6] dark:border-[#2A2925] px-8 py-6">
-        <div className="flex items-center gap-3 mb-2">
+        <div className="mb-6">
           <button
             onClick={() => navigate('home')}
-            className="flex items-center gap-1.5 mono text-xs text-[#524B43] dark:text-[#B8B0A4] hover:text-[#0E0D0B] dark:hover:text-[#F0EAD6] transition-colors border border-[#C4BAA6] dark:border-[#2A2925] px-2.5 py-1 bg-[#F2ECE1] dark:bg-[#1A1916] cursor-pointer"
+            className="flex items-center gap-1.5 mono text-xs text-[#524B43] dark:text-[#B8B0A4] hover:text-[#0E0D0B] dark:hover:text-[#F0EAD6] transition-colors cursor-pointer"
           >
             <ArrowLeft size={13} />
             <span>BACK</span>
           </button>
-          <div className="mono text-[10px] text-[#524B43] dark:text-[#B8B0A4] uppercase tracking-widest">
-            Browse
-          </div>
+        </div>
+
+        <div className="mono text-[10px] text-[#524B43] dark:text-[#B8B0A4] uppercase tracking-widest mb-1">
+          Browse
         </div>
         <h1 className="text-2xl font-black mb-1 text-[#0E0D0B] dark:text-[#F0EAD6]" style={{ fontFamily: 'Fraunces, serif' }}>
           All Items
