@@ -25,7 +25,7 @@ async def register(payload: UserRegisterSchema):
         phone=payload.phone
     )
 
-    return {"message": "Registration successful."}
+    return {"message": "Please check your email for a confirmation link to complete your registration."}
 
 @router.post("/login")
 # Login a user with email and password

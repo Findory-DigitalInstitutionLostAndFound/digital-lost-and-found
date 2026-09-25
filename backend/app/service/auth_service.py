@@ -33,7 +33,36 @@ class AuthService:
 
         # Check if user already existed (supabase returns a user object with empty identities if the user already exists)
         if res.user and getattr(res.user, "identities", None) == []:
-            raise HTTPException(status_code=400, detail="User already exists.")
+            # User already exists and has confirmed the email
+            if res.user.email_confirmed_at is not None:
+                raise HTTPException(
+                    status_code=400, 
+                    detail="An account with this email already exists. Please log in instead.")
+
+            # User exists but has not confirmed the email
+            try:
+                #update user matadata with new name and phone
+                supabase.auth.admin.update_user_by_id(
+                    uid = res.user.id,
+                    attributes = {
+                        "password": password,
+                        "user_metadata": {
+                            "full_name": name,
+                            "phone": phone
+                        }
+                    }
+                )
+
+                # Send a new confirmation email
+                supabase.auth.resend({
+                    "type": "signup",
+                    "email": clean_email
+                })
+
+                return {"message": "Please check your email for a confirmation link."}
+
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Failed to update registration details: {str(e)}")
 
         if not res.user:
             raise HTTPException(status_code=400, detail="Failed to register user.")
@@ -55,6 +84,9 @@ class AuthService:
 
         if not res.session:
             raise HTTPException(status_code=401, detail="Invalid email or password.")
+        # Check if the user has confirmed their email
+        if res.user.email_confirmed_at is None:
+            raise HTTPException(status_code=401, detail="No account found with this email. Please register first.")
 
         return res.session.access_token
 
