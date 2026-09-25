@@ -23,7 +23,7 @@ class AuthService:
                 "password": password,
                 "options": {
                     "data": {
-                        "name": name,
+                        "full_name": name,
                         "phone": phone
                     }
                 }
