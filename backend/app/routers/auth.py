@@ -3,7 +3,7 @@ from app.schemas.auth_schema import UserRegisterSchema, UserLoginSchema
 from app.service.auth_service import AuthService
 
 # create router for auth endpoints
-router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 def set_auth_cookie(response: Response, token: str):
     response.set_cookie(

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { Navbar } from '../components/ui/Navbar'
+import { authService } from '../services/authService'
 
 type RegisterPageProps = {
   navigate: (page: string) => void
@@ -12,11 +13,42 @@ export function RegisterPage({ navigate }: RegisterPageProps) {
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [infoMessage, setInfoMessage] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleRegister = (e: React.FormEvent) => {
+
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     // Handle account creation logic 
-    navigate('home')
+    setError('')
+    setInfoMessage('')
+    setLoading(true)
+
+    try {
+      const res = await authService.userRegister({
+        name: fullName,
+        email: email,
+        phone: phone,
+        password: password,
+      })
+
+      setInfoMessage(res.message)
+    } catch (err: any) {
+      const responseData = err.response?.data
+      const detail = responseData?.detail
+      console.log('Registration error:', err.response?.data || err.message || err)
+
+      if (Array.isArray(detail)) {
+        setError(detail.map((d: any) => `${d.loc.join('.')} - ${d.msg}`).join(', '))
+      } else if (typeof detail === 'string') {
+        setError(detail)
+      } else {
+        setError(responseData?.message || 'Registration failed. Please try again.')
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleGoogleRegister = () => {
@@ -70,79 +102,90 @@ export function RegisterPage({ navigate }: RegisterPageProps) {
             <div className="flex-1 h-px bg-[#C4BAA6] dark:bg-[#2A2925]" />
           </div>
 
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+              {error}
+            </div>
+          )}
+          
           {/* Registration Form */}
-          <form onSubmit={handleRegister} className="space-y-4">
-            <div>
-              <label className="block mono text-[10px] uppercase tracking-widest text-[#524B43] dark:text-[#B8B0A4] mb-1.5">
-                Full Name
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="Jane Doe"
-                value={fullName}
-                onChange={e => setFullName(e.target.value)}
-                className="w-full h-11 px-3 mono text-xs bg-[#FAF6EC] dark:bg-[#1A1916] border border-[#C4BAA6] dark:border-[#2A2925] text-[#0E0D0B] dark:text-[#F0EAD6] placeholder:text-[#524B43] dark:placeholder:text-[#8C8377] focus:outline-none focus:ring-2 focus:ring-[#D93B2B]"
-              />
-            </div>
+          { infoMessage ? (
+            <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded text-sm">
+              {infoMessage}
+            </div>) : (            
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div>
+                  <label className="block mono text-[10px] uppercase tracking-widest text-[#524B43] dark:text-[#B8B0A4] mb-1.5">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Jane Doe"
+                    value={fullName}
+                    onChange={e => setFullName(e.target.value)}
+                    className="w-full h-11 px-3 mono text-xs bg-[#FAF6EC] dark:bg-[#1A1916] border border-[#C4BAA6] dark:border-[#2A2925] text-[#0E0D0B] dark:text-[#F0EAD6] placeholder:text-[#524B43] dark:placeholder:text-[#8C8377] focus:outline-none focus:ring-2 focus:ring-[#D93B2B]"
+                  />
+                </div>
 
-            <div>
-              <label className="block mono text-[10px] uppercase tracking-widest text-[#524B43] dark:text-[#B8B0A4] mb-1.5">
-                Email
-              </label>
-              <input
-                type="email"
-                required
-                placeholder="you@email.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="w-full h-11 px-3 mono text-xs bg-[#FAF6EC] dark:bg-[#1A1916] border border-[#C4BAA6] dark:border-[#2A2925] text-[#0E0D0B] dark:text-[#F0EAD6] placeholder:text-[#524B43] dark:placeholder:text-[#8C8377] focus:outline-none focus:ring-2 focus:ring-[#D93B2B]"
-              />
-            </div>
+                <div>
+                  <label className="block mono text-[10px] uppercase tracking-widest text-[#524B43] dark:text-[#B8B0A4] mb-1.5">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="you@email.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className="w-full h-11 px-3 mono text-xs bg-[#FAF6EC] dark:bg-[#1A1916] border border-[#C4BAA6] dark:border-[#2A2925] text-[#0E0D0B] dark:text-[#F0EAD6] placeholder:text-[#524B43] dark:placeholder:text-[#8C8377] focus:outline-none focus:ring-2 focus:ring-[#D93B2B]"
+                  />
+                </div>
 
-            <div>
-              <label className="block mono text-[10px] uppercase tracking-widest text-[#524B43] dark:text-[#B8B0A4] mb-1.5">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                placeholder="+358 40 1234567"
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                className="w-full h-11 px-3 mono text-xs bg-[#FAF6EC] dark:bg-[#1A1916] border border-[#C4BAA6] dark:border-[#2A2925] text-[#0E0D0B] dark:text-[#F0EAD6] placeholder:text-[#524B43] dark:placeholder:text-[#8C8377] focus:outline-none focus:ring-2 focus:ring-[#D93B2B]"
-              />
-            </div>
+                <div>
+                  <label className="block mono text-[10px] uppercase tracking-widest text-[#524B43] dark:text-[#B8B0A4] mb-1.5">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+358 40 1234567"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    className="w-full h-11 px-3 mono text-xs bg-[#FAF6EC] dark:bg-[#1A1916] border border-[#C4BAA6] dark:border-[#2A2925] text-[#0E0D0B] dark:text-[#F0EAD6] placeholder:text-[#524B43] dark:placeholder:text-[#8C8377] focus:outline-none focus:ring-2 focus:ring-[#D93B2B]"
+                  />
+                </div>
 
-            <div>
-              <label className="block mono text-[10px] uppercase tracking-widest text-[#524B43] dark:text-[#B8B0A4] mb-1.5">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full h-11 px-3 pr-10 mono text-xs bg-[#FAF6EC] dark:bg-[#1A1916] border border-[#C4BAA6] dark:border-[#2A2925] text-[#0E0D0B] dark:text-[#F0EAD6] placeholder:text-[#524B43] dark:placeholder:text-[#8C8377] focus:outline-none focus:ring-2 focus:ring-[#D93B2B]"
-                />
+                <div>
+                  <label className="block mono text-[10px] uppercase tracking-widest text-[#524B43] dark:text-[#B8B0A4] mb-1.5">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      className="w-full h-11 px-3 pr-10 mono text-xs bg-[#FAF6EC] dark:bg-[#1A1916] border border-[#C4BAA6] dark:border-[#2A2925] text-[#0E0D0B] dark:text-[#F0EAD6] placeholder:text-[#524B43] dark:placeholder:text-[#8C8377] focus:outline-none focus:ring-2 focus:ring-[#D93B2B]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#524B43] dark:text-[#B8B0A4] hover:text-[#0E0D0B] cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                </div>
+
                 <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#524B43] dark:text-[#B8B0A4] hover:text-[#0E0D0B] cursor-pointer"
+                  type="submit"
+                  className="w-full h-11 mt-4 bg-[#D93B2B] text-[#FAF6EC] mono text-xs uppercase tracking-widest font-bold hover:bg-[#BF3323] transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  Create Account →
                 </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full h-11 mt-4 bg-[#D93B2B] text-[#FAF6EC] mono text-xs uppercase tracking-widest font-bold hover:bg-[#BF3323] transition-colors flex items-center justify-center gap-2 cursor-pointer"
-            >
-              Create Account →
-            </button>
-          </form>
+              </form>
+          )}
 
           <p className="mt-6 text-center mono text-xs text-[#524B43] dark:text-[#B8B0A4]">
             Already have an account?{' '}
