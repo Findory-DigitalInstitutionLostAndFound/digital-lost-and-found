@@ -34,7 +34,17 @@ export const authService = {
     async userLogout(): Promise<MessageResponse> {
         const response = await api.post<MessageResponse>('/auth/logout');
         return response.data;
-    }
+    },
+
+    async verifyEmailConfirmation(supabaseToken: string) {
+    // Calls FastAPI endpoint to exchange Supabase token for backend session cookie
+    const response = await api.post(
+      '/auth/supabase-callback',
+      { token: supabaseToken },
+      { withCredentials: true }
+    )
+    return response.data
+  },
 
 }
 
