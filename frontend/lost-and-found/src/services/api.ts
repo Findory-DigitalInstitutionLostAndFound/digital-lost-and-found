@@ -16,8 +16,12 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if(error.response?.status === 401) {
-            // clear local storage and redirect to login page ******check this later******
-            localStorage.clear();
+            if (!window.location.pathname.includes('login')) {
+                // clear local storage and redirect to login page ******check this later******
+                localStorage.clear();
+                //Force redirect to login page
+                window.location.href = '/login';
+            }
         }
         return Promise.reject(error);
     }
