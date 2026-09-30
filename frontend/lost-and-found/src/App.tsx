@@ -54,9 +54,15 @@ function AppContent() {
     checkSession()
   }, [])
 
-  const handleLogout = () => {
-    setUser(null)
-    navigate('login')
+  const handleLogout = async () => {
+    try{
+      await authService.userLogout() //backend delete the cookie
+    } catch (err) {
+      console.error('Logout failed:', err)
+    } finally {
+      setUser(null)
+      navigate('login')
+    }
   }
 
   // Show loading screen while checking session
