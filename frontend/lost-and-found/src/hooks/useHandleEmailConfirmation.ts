@@ -31,7 +31,7 @@ export function useHandleEmailConfirmation(
       .then(async () => {
         const user = await authService.getCurrentUser()
         onSuccess?.(user) // Call the onSuccess callback with user info
-        navigate('home') // Navigate after cookie is set
+        navigate('dashboard') // Navigate after cookie is set
       })
       .catch((err) => {
         console.error('Failed to verify session with backend:', err)
