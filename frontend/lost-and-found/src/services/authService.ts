@@ -17,6 +17,13 @@ export type MessageResponse = {
     message: string;
 };
 
+export type UserInfo = {
+  user_id: string,
+  email: string,
+  name: string,
+  phone: string
+};
+
 export const authService = {
     // Function to register a new user
     async userRegister(data: RegisterData): Promise<MessageResponse> {
@@ -37,14 +44,30 @@ export const authService = {
     },
 
     async verifyEmailConfirmation(supabaseToken: string) {
-    // Calls FastAPI endpoint to exchange Supabase token for backend session cookie
-    const response = await api.post(
-      '/auth/supabase-callback',
-      { token: supabaseToken },
-      { withCredentials: true }
-    )
-    return response.data
-  },
+        // Calls FastAPI endpoint to exchange Supabase token for backend session cookie
+        const response = await api.post(
+            '/auth/supabase-callback',
+            { token: supabaseToken },
+            { withCredentials: true }
+        )
+        return response.data
+    },
+
+    //Function to get current user info
+    async getCurrentUser(): Promise<UserInfo> {
+        const response = await api.get<{
+            user_id: string;
+            email: string;
+            full_name: string;
+            phone: string;
+        }>('/auth/me');
+        return {
+            user_id: response.data.user_id,
+            email: response.data.email,
+            name: response.data.full_name,
+            phone: response.data.phone,
+        };
+    }       
 
 }
 
