@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Response, Request, Depends, HTTPException
-from app.schemas.auth_schema import UserRegisterSchema, UserLoginSchema
+from app.schemas.auth_schema import UserRegisterSchema, UserLoginSchema, SupabaseCallbackSchema
 from app.service.auth_service import AuthService
 
 # create router for auth endpoints
@@ -11,8 +11,9 @@ def set_auth_cookie(response: Response, token: str):
         value=token,
         httponly=True,
         secure=False,  
-        samesite="lax",
-        max_age=3600  # 1 hour
+        samesite="lax", #
+        max_age=3600,  # 1 hour
+        path="/" # Set the cookie for the entire domain
     )
 
 @router.post("/register")
@@ -62,3 +63,14 @@ async def get_me(user: dict = Depends(get_current_user)):
         "full_name": user_meta.get("full_name"),
         "phone": user_meta.get("phone")
     }
+
+@router.post("/supabase-callback")
+# Handle Supabase callback after email confirmation
+async def supabase_callback(payload: SupabaseCallbackSchema, response: Response):
+    #Verify token passed from frontend
+    token = AuthService.verify_supabase_token(payload.token)
+
+    # Set the access token in a secure cookie
+    set_auth_cookie(response, token)
+    
+    return {"message": "Email confirmed and logged in successfully."}
