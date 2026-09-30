@@ -93,7 +93,10 @@ function AppContent() {
       case 'report-found':
         return <ReportItemPage mode="found" navigate={navigate} />
       case 'login':
-        return <LoginPage {...pageProps} />
+        return <LoginPage 
+          navigate={navigate} 
+          onLoginSuccess={(user) => setUser(user)}     
+        />
       case 'register':
         return <RegisterPage {...pageProps} />
       default:
