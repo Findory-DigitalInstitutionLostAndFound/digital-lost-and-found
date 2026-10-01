@@ -116,3 +116,23 @@ class AuthService:
         except Exception as e:
             print(f"Error verifying token: {e}")
             raise HTTPException(status_code=401, detail="Session expired or invalid")
+
+    @staticmethod
+    # Verify the Supabase token and return it if valid
+    def verify_supabase_token(token: str):
+        try:
+            # verify the token using supabase
+            response = supabase.auth.get_user(
+                token
+            )
+
+            # Check if the response is valid and contains user information
+            if not response or not response.user:
+                raise HTTPException(status_code=401, detail="Session expired or invalid")
+
+            # return the token to be set in the cookie for the frontend
+            return token
+        
+        except Exception as e:
+            print(f"Error verifying Supabase token: {e}")
+            raise HTTPException(status_code=401, detail=f"Token verification failed: {str(e)}")

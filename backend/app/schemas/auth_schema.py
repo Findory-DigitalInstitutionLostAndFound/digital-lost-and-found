@@ -15,3 +15,7 @@ class UserLoginSchema(BaseModel):
 # Define required payload for google auth exchange
 class GoogleAuthSchema(BaseModel):
     access_token: str
+
+# Define required payload for supabase token exchange
+class SupabaseCallbackSchema(BaseModel):
+    token: str

@@ -1,20 +1,42 @@
 import React, { useState } from 'react'
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, User } from 'lucide-react'
 import { Navbar } from '../components/ui/Navbar'
+import { authService, type UserInfo } from '../services/authService'
 
 type LoginPageProps = {
-  navigate: (page: string) => void
+  navigate: (page: string) => void,
+  onLoginSuccess?: (user: UserInfo) => void
 }
 
-export function LoginPage({ navigate }: LoginPageProps) {
+export function LoginPage({ navigate, onLoginSuccess }: LoginPageProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async(e: React.FormEvent) => {
     e.preventDefault()
     // Handle email/password login logic 
-    navigate('home')
+    setError('')
+    setLoading(true)
+
+    // Simulate login process
+    try{
+      await authService.userLogin({
+        email: email,
+        password: password,
+      })
+      // Fetch current user info after successful login
+      const user = await authService.getCurrentUser()
+      onLoginSuccess?.(user)
+      navigate('dashboard')
+    } catch (err: any) {
+        setError(err.response?.data?.detail || 'Login failed. Please try again.'
+      )
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleGoogleLogin = () => {
@@ -69,6 +91,12 @@ export function LoginPage({ navigate }: LoginPageProps) {
           </div>
 
           {/* Email / Password Form */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block mono text-[10px] uppercase tracking-widest text-[#524B43] dark:text-[#B8B0A4] mb-1.5">
@@ -109,9 +137,10 @@ export function LoginPage({ navigate }: LoginPageProps) {
 
             <button
               type="submit"
-              className="w-full h-11 mt-2 bg-[#D93B2B] text-[#FAF6EC] mono text-xs uppercase tracking-widest font-bold hover:bg-[#BF3323] transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full h-11 mt-2 bg-[#D93B2B] text-[#FAF6EC] mono text-xs uppercase tracking-widest font-bold hover:bg-[#BF3323] transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={loading}
             >
-              Sign in →
+              {loading ? 'Signing in…' : 'Sign in →'}
             </button>
           </form>
 
