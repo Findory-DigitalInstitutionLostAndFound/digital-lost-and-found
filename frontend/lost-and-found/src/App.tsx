@@ -11,14 +11,14 @@ import { Header } from './components/layout/Header'
 import { ThemeProvider } from './components/context/ThemeProvider'
 import { useHandleEmailConfirmation } from './hooks/useHandleEmailConfirmation'
 import { authService } from './services/authService'
+// @ts-ignore Vite handles CSS side-effect imports at runtime.
 import './index.css'
-import ReactDOM from 'react-dom/client'
 
 
 type Page = 'dashboard' | 'home' | 'browse' | 'login' | 'register' | 'matches' | 'report-lost' | 'report-found'
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState<Page>('dashboard')
+  const [currentPage, setCurrentPage] = useState<Page>('home')
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
   const [pendingMatchesCount] = useState<number>(1)
 
@@ -75,7 +75,7 @@ function AppContent() {
   }
 
   // Define public pages that don't require authentication
-  const isPublicPage = currentPage === 'login' || currentPage === 'register' || currentPage === 'home'
+  const isPublicPage = currentPage === 'login' || currentPage === 'register' || currentPage === 'home' || currentPage === 'browse'
   const pageProps = { navigate, selectedItemId } as any
 
   //Protect route guard
@@ -155,9 +155,3 @@ export default function App() {
     </ThemeProvider>
   )
 }
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-)
