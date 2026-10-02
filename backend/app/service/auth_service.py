@@ -136,3 +136,22 @@ class AuthService:
         except Exception as e:
             print(f"Error verifying Supabase token: {e}")
             raise HTTPException(status_code=401, detail=f"Token verification failed: {str(e)}")
+
+    @staticmethod
+    def handle_forgot_password(email: str, redirect_to: str):
+        # validate email domain
+        clean_email = email.strip().lower()
+        if not clean_email.endswith(ALLOWED_DOMAINS):
+            return # fail silent to avid attacks
+
+        # get a password reset link from supabase
+        try:
+            res = supabase.auth.reset_password_for_email(
+                clean_email,
+                options={
+                    "redirect_to": redirect_to
+                }
+            )
+            return {"message": "If the email is registered, you will receive a password reset link."}
+        except Exception as e:
+            print(f"Error resetting password: {e}")
