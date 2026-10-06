@@ -24,3 +24,8 @@ class SupabaseCallbackSchema(BaseModel):
 class ForgotPasswordSchema(BaseModel):
     email: EmailStr
     redirect_to: str
+
+# Define required payload for reset password request
+class ResetPasswordSchema(BaseModel):
+    new_password: str
+    access_token: str

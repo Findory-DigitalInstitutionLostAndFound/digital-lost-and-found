@@ -155,3 +155,22 @@ class AuthService:
             return {"message": "If the email is registered, you will receive a password reset link."}
         except Exception as e:
             print(f"Error resetting password: {e}")
+
+    @staticmethod
+    def reset_user_password(new_password: str, access_token: str):
+        try:
+            res = supabase.auth.update_user(
+                access_token,
+                {"password": new_password}
+            )
+
+            # Check if the response is valid and contains user information
+            if not res.user:
+                raise HTTPException(status_code=400, detail="Failed to reset password.")
+            
+        except Exception as e:
+            print(f"Error resetting password: {e}")
+            raise HTTPException(
+                status_code=400, 
+                detail="Invalid or expired access token. Please request a new password reset link."
+            )

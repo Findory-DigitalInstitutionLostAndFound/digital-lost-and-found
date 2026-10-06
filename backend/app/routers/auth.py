@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Response, Request, Depends, HTTPException
-from app.schemas.auth_schema import UserRegisterSchema, UserLoginSchema, SupabaseCallbackSchema, ForgotPasswordSchema
+from app.schemas.auth_schema import UserRegisterSchema, UserLoginSchema, SupabaseCallbackSchema, ForgotPasswordSchema, ResetPasswordSchema
 from app.service.auth_service import AuthService
 
 # create router for auth endpoints
@@ -81,3 +81,10 @@ async def forgot_password(payload: ForgotPasswordSchema):
     # Call auth service to handle forgot password logic
     AuthService.handle_forgot_password(payload.email, payload.redirect_to)
     return {"message": "If the email is registered, you will receive a password reset link."}
+
+@router.post("/reset-password")
+# Handle reset password request
+async def reset_password(payload: ResetPasswordSchema):
+    # Call auth service to handle reset password logic
+    AuthService.reset_user_password(payload.new_password, payload.access_token)
+    return {"message": "Password has been reset successfully."}
