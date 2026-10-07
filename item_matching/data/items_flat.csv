@@ -1,0 +1,117 @@
+id,item_type,title,category,description,location_name,event_timestamp,value_category,has_sensitive_data,ai_detected_category,ai_tags
+lost-001,lost,Black leather wallet,wallet,black leather wallet with a small red sticker inside,Linnanmaa Library,2026-09-02T11:00:00,standard,False,wallet,black|leather|wallet|red sticker
+lost-002,lost,Blue keyring with three keys,keys,three silver keys on a blue round keyring,Campus Restaurant,2026-09-03T13:00:00,standard,False,keys,blue|keys|keyring
+lost-003,lost,Dark green backpack,backpack,dark green backpack with a white mountain logo,5th floor study area,2026-09-04T15:00:00,standard,False,backpack,green|backpack|mountain logo
+lost-004,lost,Silver laptop,laptop,silver 13-inch laptop with a small scratch near the trackpad,IT Lab 2,2026-09-05T17:00:00,high_value,True,laptop,silver|laptop|scratch
+lost-005,lost,Black tablet,tablet,black tablet in a dark blue protective case,Linnanmaa Main Entrance,2026-09-06T10:00:00,high_value,True,tablet,black|tablet|blue case
+lost-006,lost,Black smartphone,smartphone,black smartphone with a transparent case and cracked corner,Lecture Hall 2,2026-09-07T12:00:00,high_value,True,smartphone,black|phone|transparent case|crack
+lost-007,lost,White wireless headphones,headphones,white over-ear wireless headphones with a grey case,Student Lounge,2026-09-08T14:00:00,high_value,True,headphones,white|headphones|wireless|grey case
+lost-008,lost,White wireless earbuds,earbuds,white earbuds in a charging case with a small blue mark,Library Group Room 3,2026-09-09T16:00:00,high_value,True,earbuds,white|earbuds|charging case|blue mark
+lost-009,lost,USB-C laptop charger,charger,white USB-C charger with a long cable,IT Lab 1,2026-09-10T09:00:00,standard,False,charger,white|charger|USB-C
+lost-010,lost,Black power bank,power_bank,small black power bank with two USB ports,Campus Restaurant,2026-09-11T11:00:00,standard,False,power_bank,black|power bank|USB
+lost-011,lost,Silver metal water bottle,water_bottle,silver insulated bottle with a blue mountain sticker,Gym Entrance,2026-09-12T13:00:00,standard,False,water_bottle,silver|bottle|metal|blue sticker
+lost-012,lost,Black folding umbrella,umbrella,small black folding umbrella with a wooden handle,Main Entrance,2026-09-13T15:00:00,standard,False,umbrella,black|umbrella|folding|wooden handle
+lost-013,lost,Black winter jacket,jacket,black padded jacket with a red zipper pull,Coat Rack near Room 201,2026-09-14T17:00:00,standard,False,jacket,black|jacket|red zipper
+lost-014,lost,Long beige coat,coat,long beige wool coat with two large front pockets,Library Coat Rack,2026-09-15T10:00:00,standard,False,coat,beige|coat|wool
+lost-015,lost,Blue knitted scarf,scarf,dark blue knitted scarf with fringed ends,Study Area 4B,2026-09-16T12:00:00,standard,False,scarf,blue|scarf|knitted|fringe
+lost-016,lost,Black gloves,gloves,pair of black touchscreen gloves,Bus Stop OAMK,2026-09-17T14:00:00,standard,False,gloves,black|gloves|touchscreen
+lost-017,lost,Grey beanie,hat,plain grey knitted beanie,Student Union Area,2026-09-18T16:00:00,standard,False,hat,grey|beanie|knitted
+lost-018,lost,White sneakers,shoes,"white sneakers with green stripes, EU size 39",Sports Hall,2026-09-01T09:00:00,standard,False,shoes,white|sneakers|green stripes|39
+lost-019,lost,Black eyeglasses,eyeglasses,black rectangular eyeglasses in a thin black case,Library Reading Area,2026-09-02T11:00:00,standard,False,eyeglasses,black|glasses|rectangular
+lost-020,lost,Brown sunglasses,sunglasses,brown sunglasses with gold-colored arms,Outdoor Courtyard,2026-09-03T13:00:00,standard,False,sunglasses,brown|sunglasses|gold arms
+lost-021,lost,Silver wristwatch,watch,silver metal wristwatch with a blue face,Locker Room,2026-09-04T15:00:00,high_value,True,watch,silver|watch|blue face
+lost-022,lost,Silver ring,ring,plain silver ring with a tiny engraved star,Cafeteria,2026-09-05T17:00:00,high_value,True,ring,silver|ring|star
+lost-023,lost,Gold-colored necklace,necklace,thin gold-colored chain with a small circular pendant,Library Stairwell,2026-09-06T10:00:00,high_value,True,necklace,gold|necklace|pendant
+lost-024,lost,Single silver earring,earring,small silver hoop earring,Women's Restroom,2026-09-07T12:00:00,high_value,True,earring,silver|earring|hoop
+lost-025,lost,Data Structures textbook,book,blue university textbook about data structures with handwritten notes,Library,2026-09-08T14:00:00,standard,False,book,book|data structures|blue
+lost-026,lost,Black spiral notebook,notebook,black spiral notebook with a yellow label on the front,Study Area 2C,2026-09-09T16:00:00,standard,False,notebook,black|notebook|spiral|yellow label
+lost-027,lost,Red pencil case,pen_case,red fabric pencil case containing several pens,Classroom 204,2026-09-10T09:00:00,standard,False,pen_case,red|pencil case|fabric
+lost-028,lost,Scientific calculator,calculator,black scientific calculator with a grey protective cover,Math Classroom,2026-09-11T11:00:00,standard,False,calculator,black|calculator|scientific
+lost-029,lost,Student card,student_card,OAMK student card in a clear plastic holder,Main Lobby,2026-09-12T13:00:00,high_value,True,student_card,student card|plastic holder
+lost-030,lost,Bank card,bank_card,blue bank card found near a vending machine,Vending Area,2026-09-13T15:00:00,high_value,True,bank_card,bank card|blue
+lost-031,lost,Passport,passport,dark passport booklet,Travel Desk Area,2026-09-14T17:00:00,high_value,True,passport,passport|booklet
+lost-032,lost,Identification card,id_card,plastic identification card with a photo,Main Entrance,2026-09-15T10:00:00,high_value,True,id_card,ID card|photo
+lost-033,lost,Mirrorless camera,camera,black mirrorless camera with a red wrist strap,Media Lab,2026-09-16T12:00:00,high_value,True,camera,camera|black|red strap
+lost-034,lost,Camera lens,camera_lens,black 50mm camera lens with a front cap,Media Lab,2026-09-17T14:00:00,high_value,True,camera_lens,camera lens|50mm|black
+lost-035,lost,Black USB flash drive,usb_drive,small black USB drive with a silver cap,Computer Lab 3,2026-09-18T16:00:00,standard,False,usb_drive,USB|black|silver cap
+lost-036,lost,External hard drive,hard_drive,small black external hard drive with a short cable,IT Lab 4,2026-09-01T09:00:00,high_value,True,hard_drive,hard drive|black|cable
+lost-037,lost,Wireless game controller,game_controller,black wireless controller with a white logo,Student Lounge,2026-09-02T11:00:00,standard,False,game_controller,controller|black|wireless
+lost-038,lost,Blue football,sports_ball,blue and white football with a faded logo,Sports Hall,2026-09-03T13:00:00,standard,False,sports_ball,football|blue|white
+lost-039,lost,Purple yoga mat,yoga_mat,purple exercise mat with a black carry strap,Gym,2026-09-04T15:00:00,standard,False,yoga_mat,yoga mat|purple|black strap
+lost-040,lost,Blue lunch box,lunch_box,rectangular blue lunch box with a white lid,Campus Restaurant,2026-09-05T17:00:00,standard,False,lunch_box,lunch box|blue|white lid
+lost-041,lost,Red thermos,thermos,red insulated travel mug with a black lid,Lecture Hall 1,2026-09-06T10:00:00,standard,False,thermos,thermos|red|black lid
+lost-042,lost,Black bicycle lock,bicycle_lock,black combination bicycle lock with four number wheels,Bicycle Parking,2026-09-07T12:00:00,standard,False,bicycle_lock,bicycle lock|black|combination
+lost-043,lost,Black bicycle helmet,helmet,matte black bicycle helmet with reflective strips,Bicycle Parking,2026-09-08T14:00:00,standard,False,helmet,helmet|black|reflective
+lost-044,lost,Blue calculator case,calculator_case,blue hard-shell case for a small calculator,Math Classroom,2026-09-09T16:00:00,standard,False,calculator_case,calculator case|blue|hard shell
+lost-045,lost,Small LED flashlight,flashlight,small silver LED flashlight with a black grip,Basement Corridor,2026-09-10T09:00:00,standard,False,flashlight,flashlight|silver|black grip
+lost-046,lost,White access keycard,keycard,white plastic access card with a blue stripe,IT Building Entrance,2026-09-11T11:00:00,high_value,True,keycard,keycard|white|blue stripe
+lost-047,lost,Small MP3 player,music_player,small black music player with wired earphones,Student Lounge,2026-09-12T13:00:00,standard,False,music_player,MP3|black|earphones
+lost-048,lost,Small plush penguin,toy,small grey penguin plush toy with an orange scarf,Family Study Area,2026-09-13T15:00:00,standard,False,toy,plush|penguin|orange scarf
+found-001,found,Black leather wallet,wallet,Black leather wallet found with a small red sticker inside,Linnanmaa Library,2026-09-03T10:00:00,standard,False,wallet,black|leather|wallet|red sticker
+found-002,found,Blue keyring with three keys,keys,Set of three silver keys attached to a blue keyring,Campus Restaurant,2026-09-05T13:00:00,standard,False,keys,blue|keys|keyring
+found-003,found,Dark green backpack,backpack,Dark green backpack with a white mountain logo,5th floor study area,2026-09-04T16:00:00,standard,False,backpack,green|backpack|mountain logo
+found-004,found,Silver laptop,laptop,Silver 13-inch laptop with a small scratch close to the trackpad,IT Lab 2,2026-09-06T19:00:00,high_value,True,laptop,silver|laptop|scratch
+found-005,found,Black tablet,tablet,Black tablet inside a dark blue protective cover,Linnanmaa Main Entrance,2026-09-08T08:00:00,high_value,True,tablet,black|tablet|blue case
+found-006,found,Black smartphone,smartphone,Black phone with transparent case and cracked corner,Lecture Hall 2,2026-09-07T11:00:00,high_value,True,smartphone,black|phone|transparent case|crack
+found-007,found,White wireless headphones,headphones,White wireless over-ear headphones with grey carrying case,Student Lounge,2026-09-09T14:00:00,high_value,True,headphones,white|headphones|wireless|grey case
+found-008,found,White wireless earbuds,earbuds,White earbuds in charging case with a small blue mark,Library entrance Group Room 3,2026-09-11T17:00:00,high_value,True,earbuds,white|earbuds|charging case|blue mark
+found-009,found,USB-C laptop charger,charger,White USB-C laptop charger with a long cable,IT Lab 1,2026-09-10T11:00:00,standard,False,charger,white|charger|USB-C
+found-010,found,Black power bank,power_bank,Small black portable power bank with two USB ports,Campus Restaurant,2026-09-12T09:00:00,standard,False,power_bank,black|power bank|USB
+found-011,found,Silver metal water bottle,water_bottle,Silver insulated metal bottle with blue mountain sticker,Gym Entrance,2026-09-14T12:00:00,standard,False,water_bottle,silver|bottle|metal|blue sticker
+found-012,found,Black folding umbrella,umbrella,Small black folding umbrella with wooden handle,Main lobby,2026-09-13T15:00:00,standard,False,umbrella,black|umbrella|folding|wooden handle
+found-013,found,Black winter jacket,jacket,Black padded winter jacket with red zipper pull,Coat Rack near Room 201,2026-09-15T18:00:00,standard,False,jacket,black|jacket|red zipper
+found-014,found,Long beige coat,coat,Long beige wool coat with two large front pockets,Library Coat Rack,2026-09-17T12:00:00,standard,False,coat,beige|coat|wool
+found-015,found,Blue knitted scarf,scarf,Dark blue knitted scarf with fringed ends,Study Area 4B,2026-09-16T10:00:00,standard,False,scarf,blue|scarf|knitted|fringe
+found-016,found,Black gloves,gloves,Pair of black touchscreen gloves,Bus Stop OAMK,2026-09-18T13:00:00,standard,False,gloves,black|gloves|touchscreen
+found-017,found,Grey beanie,hat,Plain grey knitted beanie,Student Union Area,2026-09-20T16:00:00,standard,False,hat,grey|beanie|knitted
+found-018,found,White sneakers,shoes,"White sneakers with green stripes, size 39",Sports Hall,2026-09-01T10:00:00,standard,False,shoes,white|sneakers|green stripes|39
+found-019,found,Black eyeglasses,eyeglasses,Black rectangular glasses inside a thin black case,Library Reading Area,2026-09-03T13:00:00,standard,False,eyeglasses,black|glasses|rectangular
+found-020,found,Brown sunglasses,sunglasses,Brown sunglasses with gold-colored arms,Outdoor Courtyard,2026-09-05T11:00:00,standard,False,sunglasses,brown|sunglasses|gold arms
+found-021,found,Silver wristwatch,watch,Silver metal wristwatch with blue face,Locker Room,2026-09-04T14:00:00,high_value,True,watch,silver|watch|blue face
+found-022,found,Silver ring,ring,Plain silver ring with tiny engraved star,Cafeteria,2026-09-06T17:00:00,high_value,True,ring,silver|ring|star
+found-023,found,Gold-colored necklace,necklace,Thin gold-colored necklace with circular pendant,Library Stairwell,2026-09-08T11:00:00,high_value,True,necklace,gold|necklace|pendant
+found-024,found,Single silver earring,earring,Small silver hoop earring,Women's Restroom,2026-09-07T14:00:00,high_value,True,earring,silver|earring|hoop
+found-025,found,Data Structures textbook,book,Blue textbook about data structures containing handwritten notes,Library,2026-09-09T12:00:00,standard,False,book,book|data structures|blue
+found-026,found,Black spiral notebook,notebook,Black spiral notebook with yellow front label,Study Area 2C,2026-09-11T15:00:00,standard,False,notebook,black|notebook|spiral|yellow label
+found-027,found,Red pencil case,pen_case,Red fabric pencil case containing several pens,Classroom 204,2026-09-10T09:00:00,standard,False,pen_case,red|pencil case|fabric
+found-028,found,Scientific calculator,calculator,Black scientific calculator with grey protective cover,Math Classroom,2026-09-12T12:00:00,standard,False,calculator,black|calculator|scientific
+found-029,found,Student card,student_card,OAMK student card in clear plastic holder,Main Lobby,2026-09-14T15:00:00,high_value,True,student_card,student card|plastic holder
+found-030,found,Bank card,bank_card,Blue bank card,Vending Area,2026-09-13T13:00:00,high_value,True,bank_card,bank card|blue
+found-031,found,Passport,passport,Dark passport booklet,Travel Desk Area,2026-09-15T16:00:00,high_value,True,passport,passport|booklet
+found-032,found,Identification card,id_card,Plastic identification card with photo,Main lobby,2026-09-17T10:00:00,high_value,True,id_card,ID card|photo
+found-033,found,Mirrorless camera,camera,Black mirrorless camera with red wrist strap,Media Lab,2026-09-16T13:00:00,high_value,True,camera,camera|black|red strap
+found-034,found,Camera lens,camera_lens,Black 50mm camera lens with front cap,Media Lab,2026-09-18T16:00:00,high_value,True,camera_lens,camera lens|50mm|black
+found-035,found,Black USB flash drive,usb_drive,Small black USB flash drive with silver cap,Computer Lab 3,2026-09-20T14:00:00,standard,False,usb_drive,USB|black|silver cap
+found-036,found,External hard drive,hard_drive,Small black external hard drive with short cable,IT Lab 4,2026-09-01T08:00:00,high_value,True,hard_drive,hard drive|black|cable
+found-037,found,Wireless game controller,game_controller,Black wireless game controller with white logo,Student Lounge,2026-09-03T11:00:00,standard,False,game_controller,controller|black|wireless
+found-038,found,Blue football,sports_ball,Blue and white football with faded logo,Sports Hall,2026-09-05T14:00:00,standard,False,sports_ball,football|blue|white
+found-039,found,Purple yoga mat,yoga_mat,Purple exercise mat with black carrying strap,Gym,2026-09-04T17:00:00,standard,False,yoga_mat,yoga mat|purple|black strap
+found-040,found,Blue lunch box,lunch_box,Rectangular blue lunch box with white lid,Campus Restaurant,2026-09-06T15:00:00,standard,False,lunch_box,lunch box|blue|white lid
+found-041,found,Red thermos,thermos,Red insulated travel mug with black lid,Lecture Hall 1,2026-09-08T09:00:00,standard,False,thermos,thermos|red|black lid
+found-042,found,Black bicycle lock,bicycle_lock,Black combination bicycle lock with four number wheels,Bicycle Parking,2026-09-07T12:00:00,standard,False,bicycle_lock,bicycle lock|black|combination
+found-043,found,Black bicycle helmet,helmet,Matte black bicycle helmet with reflective strips,Bicycle Parking,2026-09-09T15:00:00,standard,False,helmet,helmet|black|reflective
+found-044,found,Blue calculator case,calculator_case,Blue hard-shell calculator case,Math Classroom,2026-09-11T18:00:00,standard,False,calculator_case,calculator case|blue|hard shell
+found-045,found,Small LED flashlight,flashlight,Small silver LED flashlight with black grip,Basement Corridor,2026-09-10T07:00:00,standard,False,flashlight,flashlight|silver|black grip
+found-046,found,White access keycard,keycard,White plastic access card with blue stripe,IT Building Entrance,2026-09-12T10:00:00,high_value,True,keycard,keycard|white|blue stripe
+found-047,found,Small MP3 player,music_player,Small black MP3 player with wired earphones,Student Lounge,2026-09-14T13:00:00,standard,False,music_player,MP3|black|earphones
+found-048,found,Small plush penguin,toy,Small grey penguin plush toy wearing an orange scarf,Family Study area,2026-09-13T16:00:00,standard,False,toy,plush|penguin|orange scarf
+found-051,found,Brown fabric wallet,wallet,brown fabric wallet with a green stripe,Sports Hall,2026-09-22T10:00:00,standard,False,wallet,brown|fabric|green stripe
+found-052,found,Red keyring with one key,keys,single brass key attached to a red plastic ring,Library,2026-09-23T11:00:00,standard,False,keys,red|key|brass
+found-053,found,Bright red backpack,backpack,red backpack with black straps and no logo,Cafeteria,2026-09-24T12:00:00,standard,False,backpack,red|backpack|black straps
+found-054,found,Black laptop,laptop,black 15-inch laptop with no visible marks,Room 301,2026-09-25T13:00:00,standard,False,laptop,black|laptop|15-inch
+found-055,found,White smartphone,smartphone,white phone with a blue silicone case,Bus Stop OAMK,2026-09-26T14:00:00,standard,False,smartphone,white|phone|blue case
+found-056,found,Black wired headphones,headphones,black over-ear headphones with a coiled cable,Computer Lab,2026-09-27T15:00:00,standard,False,headphones,black|headphones|wired
+found-057,found,Green plastic bottle,water_bottle,green reusable plastic bottle with no stickers,Lecture Hall 4,2026-09-28T09:00:00,standard,False,water_bottle,green|bottle|plastic
+found-058,found,Blue rain jacket,jacket,light blue waterproof jacket with black hood,Main Lobby,2026-09-29T10:00:00,standard,False,jacket,blue|jacket|rain
+found-059,found,Black running shoes,shoes,"black running shoes with white soles, size 42",Gym,2026-09-30T11:00:00,standard,False,shoes,black|shoes|running|42
+found-060,found,Python programming book,book,orange programming textbook about Python,Library,2026-10-01T12:00:00,standard,False,book,book|python|orange
+found-061,found,Compact silver camera,camera,small silver compact digital camera with black case,Cafeteria,2026-10-02T13:00:00,standard,False,camera,camera|silver|compact
+found-062,found,Black digital watch,watch,black digital sports watch with rubber strap,Sports Hall,2026-10-03T14:00:00,standard,False,watch,watch|black|digital
+found-063,found,White notebook,notebook,plain white notebook with blue pen attached,Room 102,2026-10-04T15:00:00,standard,False,notebook,notebook|white|blue pen
+found-064,found,Transparent umbrella,umbrella,clear umbrella with curved black handle,Main Entrance,2026-10-05T09:00:00,standard,False,umbrella,umbrella|clear|black handle
+found-065,found,White calculator,calculator,white basic calculator with large buttons,Room 204,2026-10-06T10:00:00,standard,False,calculator,calculator|white|basic
+found-066,found,Black earbuds,earbuds,black earbuds in a black charging case,Student Lounge,2026-10-07T11:00:00,standard,False,earbuds,black|earbuds|charging case
+found-067,found,Gold-colored ring,ring,gold-colored ring with a smooth surface,Cafeteria,2026-10-08T12:00:00,standard,False,ring,gold|ring
+found-068,found,Red football,sports_ball,red and black football,Sports Hall,2026-10-09T13:00:00,standard,False,sports_ball,football|red|black
+found-069,found,Green lunch box,lunch_box,green rectangular lunch box with yellow lid,Campus Restaurant,2026-10-10T14:00:00,standard,False,lunch_box,lunch box|green|yellow
+found-070,found,White bicycle helmet,helmet,white bicycle helmet with black vents,Bicycle Parking,2026-10-11T15:00:00,standard,False,helmet,helmet|white|black
