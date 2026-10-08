@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { Navbar } from '../components/ui/Navbar'
 import { authService } from '../services/authService'
+import { validatePassword, isPasswordValid } from '../utils/passwordValidation'
 
 type RegisterPageProps = {
   navigate: (page: string) => void
@@ -23,8 +24,16 @@ export function RegisterPage({ navigate }: RegisterPageProps) {
     // Handle account creation logic 
     setError('')
     setInfoMessage('')
-    setLoading(true)
 
+    // validate password requirements
+    const passwordValidation = validatePassword(password)
+    if (!isPasswordValid(passwordValidation)) {
+      setError('Password does not meet the requirements. It must be at least 8 characters long and include uppercase, lowercase, number, and special character.')
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
     try {
       const res = await authService.userRegister({
         name: fullName,

@@ -30,8 +30,8 @@ export type ForgotPasswordData = {
 };
 
 export type ResetPasswordData = {
-    token: string;
-    password: string;
+    access_token: string;
+    new_password: string;
 };
 
 export const authService = {
