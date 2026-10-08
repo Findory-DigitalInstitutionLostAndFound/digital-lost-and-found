@@ -159,14 +159,17 @@ class AuthService:
     @staticmethod
     def reset_user_password(new_password: str, access_token: str):
         try:
-            res = supabase.auth.update_user(
-                access_token,
-                {"password": new_password}
-            )
-
-            # Check if the response is valid and contains user information
+            print(f"Resetting password for access token: {access_token}")
+            # Set the session with the provided access token to authenticate the user
+            supabase.auth.set_session(access_token = access_token, refresh_token= access_token)  # Set the session with the provided access token
+            
+            # Update the user's password using the Supabase client
+            res = supabase.auth.update_user({
+                "password": new_password
+            })
             if not res.user:
-                raise HTTPException(status_code=400, detail="Failed to reset password.")
+                raise HTTPException(status_code=400, detail="Failed to reset password. Invalid or expired access token.")
+            return {"message": "Password reset successful."}
             
         except Exception as e:
             print(f"Error resetting password: {e}")
