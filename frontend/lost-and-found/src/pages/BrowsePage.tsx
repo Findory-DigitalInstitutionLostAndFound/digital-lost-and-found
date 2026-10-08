@@ -81,9 +81,11 @@ const MOCK_ITEMS: Item[] = [
 
 type BrowsePageProps = {
   navigate: (page: string, itemId?: number) => void
+  hideNavbar?: boolean // Prop to hide the navbar during user login
+  hideBackButton?: boolean // Prop to hide the back button during user login
 }
 
-export function BrowsePage({ navigate }: BrowsePageProps) {
+export function BrowsePage({ navigate, hideNavbar = false, hideBackButton = false }: BrowsePageProps) {
   const [query, setQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | 'lost' | 'found'>('all')
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -106,19 +108,21 @@ export function BrowsePage({ navigate }: BrowsePageProps) {
   return (
     <div className="flex-1 min-h-screen bg-[#FAF6EC] text-[#0E0D0B] dark:bg-[#0E0D0B] dark:text-[#F0EAD6] transition-colors flex flex-col">
       {/* Navigation */}
-      <Navbar navigate={navigate} activePage="browse" />
+      {!hideNavbar && <Navbar navigate={navigate} activePage="browse" />}
 
       {/* Header section with Back Button and Page Title */}
       <div className="border-b border-[#C4BAA6] dark:border-[#2A2925] px-8 py-6">
-        <div className="mb-6">
-          <button
-            onClick={() => navigate('home')}
-            className="flex items-center gap-1.5 mono text-xs text-[#524B43] dark:text-[#B8B0A4] hover:text-[#0E0D0B] dark:hover:text-[#F0EAD6] transition-colors cursor-pointer"
-          >
-            <ArrowLeft size={13} />
-            <span>BACK</span>
-          </button>
-        </div>
+        {!hideBackButton && (
+          <div className="mb-6">
+            <button
+              onClick={() => navigate('home')}
+              className="flex items-center gap-1.5 mono text-xs text-[#524B43] dark:text-[#B8B0A4] hover:text-[#0E0D0B] dark:hover:text-[#F0EAD6] transition-colors cursor-pointer"
+            >
+              <ArrowLeft size={13} />
+              <span>BACK</span>
+            </button>
+          </div>
+        )}
 
         <div className="mono text-[10px] text-[#524B43] dark:text-[#B8B0A4] uppercase tracking-widest mb-1">
           Browse
