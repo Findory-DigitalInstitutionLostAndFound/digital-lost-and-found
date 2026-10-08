@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ArrowLeft, Eye, EyeOff, User } from 'lucide-react'
 import { Navbar } from '../components/ui/Navbar'
 import { authService, type UserInfo } from '../services/authService'
+import { validatePassword, isPasswordValid } from '../utils/passwordValidation'
 
 type LoginPageProps = {
   navigate: (page: string) => void,
@@ -20,6 +21,14 @@ export function LoginPage({ navigate, onLoginSuccess }: LoginPageProps) {
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Check if there is a rest token in session storage to decide whether to show the new password view
+  useEffect(() => {
+    const token = sessionStorage.getItem('resetToken')
+    if (token) {
+      setCurrentView('new-password')
+    }
+  }, [])
 
   const handleLogin = async(e: React.FormEvent) => {
     e.preventDefault()
@@ -48,9 +57,12 @@ export function LoginPage({ navigate, onLoginSuccess }: LoginPageProps) {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    setLoading(true)
 
     try {
+      await authService.forgotPassword({
+        email: email,
+        redirect_to: `${window.location.origin}/login`
+      })
       setCurrentView('success')
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to send reset link. Please try again.')
@@ -63,14 +75,38 @@ export function LoginPage({ navigate, onLoginSuccess }: LoginPageProps) {
     e.preventDefault()
     setError('')
 
+    // Validate the new password
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match.')
+      setLoading(false)
+      return
+    }
+
+    // Validate password requirements
+    const passwordValidation = validatePassword(newPassword)
+    if (!isPasswordValid(passwordValidation)) {
+      setError('Password does not meet the requirements. It must be at least 8 characters long and include uppercase, lowercase, number, and special character.')
+      setLoading(false)
+      return
+    }
+
+    // Check if the reset token is available in session storage and if not, show an error and redirect to the forgot password view
+    const accessToken = sessionStorage.getItem('resetToken')
+    if (!accessToken) {
+      setError('Reset link expired. Please request a new one.')
+      setCurrentView('forgot')
       return
     }
 
     setLoading(true)
 
+    // Call the authService to reset the password
     try {
+      await authService.resetPassword({
+        access_token: accessToken,
+        new_password: newPassword,
+      })
+      sessionStorage.removeItem('resetToken') // Clear the reset token from session storage after successful password reset
       setCurrentView('login')
       setPassword('')
       setNewPassword('')

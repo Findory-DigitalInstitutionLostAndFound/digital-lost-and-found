@@ -24,6 +24,16 @@ export type UserInfo = {
   phone: string
 };
 
+export type ForgotPasswordData = {
+    email: string;
+    redirect_to: string;
+};
+
+export type ResetPasswordData = {
+    access_token: string;
+    new_password: string;
+};
+
 export const authService = {
     // Function to register a new user
     async userRegister(data: RegisterData): Promise<MessageResponse> {
@@ -67,7 +77,19 @@ export const authService = {
             name: response.data.full_name,
             phone: response.data.phone,
         };
-    }       
+    },
+    
+    // Function to handle forgot password
+    async forgotPassword(data: ForgotPasswordData): Promise<MessageResponse> {
+        const response = await api.post<MessageResponse>('/auth/forgot-password', data);
+        return response.data;
+    },
+
+    // Function to handle reset password
+    async resetPassword(data: ResetPasswordData): Promise<MessageResponse> {
+        const response = await api.post<MessageResponse>('/auth/reset-password', data);
+        return response.data;
+    }
 
 }
 
