@@ -1,6 +1,6 @@
 type NavbarProps = {
   navigate: (page: string) => void
-  activePage?: 'browse' | 'login' | 'register'
+  activePage?: 'browse' | 'guest' | 'login' | 'register'
 }
 
 export function Navbar({ navigate, activePage }: NavbarProps) {
@@ -28,6 +28,17 @@ export function Navbar({ navigate, activePage }: NavbarProps) {
           }`}
         >
           Browse
+        </button>
+
+        <button
+          onClick={() => navigate('guest')}
+          className={`mono text-xs uppercase tracking-[0.2em] transition-colors cursor-pointer ${
+            activePage === 'guest'
+              ? 'text-[#D93B2B] font-bold'
+              : 'text-[#524B43] dark:text-[#ddd8d4] hover:text-[#0E0D0B] dark:hover:text-[#FFFFFF]'
+          }`}
+        >
+          Guest
         </button>
 
         <button
