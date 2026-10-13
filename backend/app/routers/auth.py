@@ -20,14 +20,13 @@ def set_auth_cookie(response: Response, token: str):
 @router.post("/register")
 # Register a new user
 async def register(payload: UserRegisterSchema):
-    AuthService.register_user(
+    data = AuthService.register_user(
         email=payload.email,
         password=payload.password,
         name=payload.name,
         phone=payload.phone
     )
-
-    return {"message": "Please check your email for a confirmation link to complete your registration."}
+    return data
 
 @router.post("/login")
 # Login a user with email and password
