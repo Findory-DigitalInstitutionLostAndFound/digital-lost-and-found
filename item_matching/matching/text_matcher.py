@@ -40,38 +40,52 @@ def location_score(lost_item, found_item):
 def date_score(lost_item, found_item):
     lost_date = datetime.fromisoformat(
         lost_item["event_timestamp"]
-    )
+    ).date()
 
     found_date = datetime.fromisoformat(
         found_item["event_timestamp"]
-    )
+    ).date()
 
     difference = abs((lost_date - found_date).days)
 
     if difference == 0:
         return 15
 
-    if difference <= 1:
+    if difference == 1:
         return 10
 
-    if difference <= 2:
+    if difference == 2:
         return 5
 
     return 0
 
 
 def text_similarity(lost_item, found_item):
+    def safe_text(value):
+        if value is None:
+            return ""
+
+        if isinstance(value, list):
+            return " ".join(
+                str(item) for item in value if item is not None
+            )
+
+        return str(value)
+    
     lost_text = " ".join([
-        lost_item.get("title", ""),
-        lost_item.get("description", ""),
-        " ".join(lost_item.get("ai_tags", []))
+        safe_text(lost_item.get("title")),
+        safe_text(lost_item.get("description")),
+        safe_text(lost_item.get("ai_tags")),
     ]).lower()
 
     found_text = " ".join([
-        found_item.get("title", ""),
-        found_item.get("description", ""),
-        " ".join(found_item.get("ai_tags", []))
+        safe_text(found_item.get("title")),
+        safe_text(found_item.get("description")),
+        safe_text(found_item.get("ai_tags")),
     ]).lower()
+
+    if not lost_text.strip() or not found_text.strip():
+        return 0.0
 
     return SequenceMatcher(
         None,

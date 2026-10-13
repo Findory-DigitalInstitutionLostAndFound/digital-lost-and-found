@@ -92,7 +92,7 @@ def test_empty_tag_lists_do_not_crash():
 def test_empty_title_and_description_do_not_crash():
     a = make_item(title="", description="", ai_tags=[])
     b = make_item(title="", description="", ai_tags=[])
-    assert text_similarity(a, b) == pytest.approx(1.0)
+    assert text_similarity(a, b) == pytest.approx(0.0)
 
 
 # Combined score
@@ -124,7 +124,7 @@ def test_exact_match_scores_higher_than_unrelated_item():
     assert calculate_match_score(lost, exact)["score"] > calculate_match_score(lost, unrelated)["score"]
 
 
-# Robustness tests: failures here mean text_similarity needs safer defaults.
+# Robustness tests
 def test_missing_ai_tags_are_handled():
     a, b = make_item(), make_item()
     a.pop("ai_tags")
