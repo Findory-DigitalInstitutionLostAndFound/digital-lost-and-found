@@ -19,22 +19,46 @@ import { GuestPage } from './pages/GuestPage'
 type Page = 'dashboard' | 'home' | 'browse' | 'login' | 'register' | 'matches' | 'report-lost' | 'report-found' | 'guest'
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState<Page>('home')
+  const getInitialPage = (): Page => {
+    const path = window.location.pathname.replace('/', '') as Page
+    const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest']
+    return validPages.includes(path) ? path : 'home'
+  }
+  
+  const [currentPage, setCurrentPage] = useState<Page>(getInitialPage())
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
   const [pendingMatchesCount] = useState<number>(1)
 
   // Start with user as null, will be set after login or registration
   const [user, setUser] = useState<{ name: string; email: string; phone: string; user_id: string } | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.replace('/', '') as Page
+      const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest']
+      if (validPages.includes(path)) {
+        setCurrentPage(path)
+      } else {
+        setCurrentPage('home')
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
   const navigate = (page: string, itemId?: number) => {
     if (itemId !== undefined) {
       setSelectedItemId(itemId)
     }
-    setCurrentPage(page as Page)
+    const targetPage = page as Page
+    setCurrentPage(targetPage)
     
     // Sync the browser URL with the current page state
-    const newPath = page === 'home' ? '/' : `/${page}`
-    window.history.pushState({}, '', newPath)
+    const newPath = targetPage === 'home' ? '/' : `/${targetPage}`
+    if (window.location.pathname !== newPath) {
+      window.history.pushState({}, '', newPath)
+    }
 
     window.scrollTo(0, 0)
   }
