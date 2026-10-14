@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from app.core.config import supabase
+from datetime import datetime, timezone, timedelta
 
 # Allowed university email domains
 ALLOWED_DOMAINS = ("@students.oamk.fi", "@oamk.fi", "@student.oulu.fi", "@oulu.fi")
@@ -31,8 +32,11 @@ class AuthService:
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
 
-        # Check if user already existed (supabase returns a user object with empty identities if the user already exists)
-        if res.user and getattr(res.user, "identities", None) == []:
+        # Check if user already existed 
+        if not res.user:
+                    raise HTTPException(status_code=400, detail="Failed to register user.")
+        
+        if res.user :
             # User already exists and has confirmed the email
             if res.user.email_confirmed_at is not None:
                 raise HTTPException(
@@ -40,34 +44,24 @@ class AuthService:
                     detail="An account with this email already exists. Please log in instead.")
 
             # User exists but has not confirmed the email
-            try:
-                #update user matadata with new name and phone
-                supabase.auth.admin.update_user_by_id(
-                    uid = res.user.id,
-                    attributes = {
-                        "password": password,
-                        "user_metadata": {
-                            "full_name": name,
-                            "phone": phone
-                        }
-                    }
-                )
+            if res.user.email_confirmed_at is None:
+                # Check if the account was created more than 60 seconds ago
+                created_at = res.user.created_at
+                
+                if created_at.tzinfo is None:
+                    created_at = created_at.replace(tzinfo=timezone.utc) # This assumes the created_at is in UTC if no timezone info is present 
+                else:
+                    created_at = created_at.astimezone(timezone.utc) # Convert to UTC if timezone info is present
 
-                # Send a new confirmation email
-                supabase.auth.resend({
-                    "type": "signup",
-                    "email": clean_email
-                })
+                already_existed = (datetime.now(timezone.utc) - created_at) > timedelta(seconds=60)
 
-                return {"message": "Please check your email for a confirmation link."}
-
-            except Exception as e:
-                raise HTTPException(status_code=400, detail=f"Failed to update registration details: {str(e)}")
-
-        if not res.user:
-            raise HTTPException(status_code=400, detail="Failed to register user.")
-
-        return res
+                # If the account was created more than 60 seconds ago, resend the confirmation email
+                if already_existed:
+                        return {"message": "You have created an account before but haven't confirmed your email. Please check your email for a confirmation link. Then update your personal info and password after logging in."}
+                    
+        return {
+            "message": "Please check your email for a confirmation link to complete your registration."
+        }
 
     @staticmethod
     # Login user with email and password

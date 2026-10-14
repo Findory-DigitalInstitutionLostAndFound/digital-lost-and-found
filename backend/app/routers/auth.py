@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Response, Request, Depends, HTTPException
 from app.schemas.auth_schema import UserRegisterSchema, UserLoginSchema, SupabaseCallbackSchema, ForgotPasswordSchema, ResetPasswordSchema
 from app.service.auth_service import AuthService
+from app.api.deps import get_current_user
 
 # create router for auth endpoints
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -9,8 +10,8 @@ def set_auth_cookie(response: Response, token: str):
     response.set_cookie(
         key="access_token",
         value=token,
-        httponly=True,
-        secure=False,  
+        httponly=True, # Make true so it can not be accessed by JavaScript
+        secure=True,  # True in production to ensure cookies are sent over HTTPS
         samesite="lax", #
         max_age=3600,  # 1 hour
         path="/" # Set the cookie for the entire domain
@@ -19,14 +20,13 @@ def set_auth_cookie(response: Response, token: str):
 @router.post("/register")
 # Register a new user
 async def register(payload: UserRegisterSchema):
-    AuthService.register_user(
+    data = AuthService.register_user(
         email=payload.email,
         password=payload.password,
         name=payload.name,
         phone=payload.phone
     )
-
-    return {"message": "Please check your email for a confirmation link to complete your registration."}
+    return data
 
 @router.post("/login")
 # Login a user with email and password
@@ -42,16 +42,6 @@ async def login(payload: UserLoginSchema, response: Response):
 async def logout(response: Response):
     response.delete_cookie("access_token")
     return {"message": "Logged out successfully"}
-
-# Get the current authenticated user based on the access token in cookies
-async def get_current_user(request: Request):
-    token = request.cookies.get("access_token")
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    try:
-        return AuthService.verify_and_get_user(token)
-    except Exception:
-        raise HTTPException(status_code=401, detail="Session expired or invalid")
 
 @router.get("/me")
 # Get the current authenticated user's information
