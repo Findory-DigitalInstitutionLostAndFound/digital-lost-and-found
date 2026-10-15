@@ -5,7 +5,8 @@ def create_pii_analyzer() -> AnalyzerEngine:
     """Create and configure the Presidio analyzer. Includes the official Finnish personal identity code recognizer."""
     # Create a custom registry to include the Finnish personal identity code recognizer 
     registry = RecognizerRegistry()
-    registry.load_predefined_recognizers()
+    registry.supported_languages = ["en", "fi"]  # Specify supported languages
+    registry.load_predefined_recognizers(languages=["en", "fi"])  # Load predefined recognizers for English and Finnish
 
     # Enable the Finnish personal identity code recognizer
     registry.add_recognizer(FiPersonalIdentityCodeRecognizer())
