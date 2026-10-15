@@ -5,6 +5,8 @@ import easyocr # For Optical Character Recognition (OCR)
 from presidio_analyzer import AnalyzerEngine # For sensitive data detection
 from app.core.pii import create_pii_analyzer # Custom function to create a Presidio analyzer with Finnish PII recognizer
 from app.routers.found_item import router as found_item_router
+from app.core.gemini import create_gemini_client
+from app.core.openrouter import create_openrouter_client
 
 # create fast api
 app = FastAPI(title="Digital Lost and Found API")  
@@ -31,6 +33,8 @@ ocr_reader = easyocr.Reader(['en'])  # Load the OCR model
 # Make them available to the rest of the app
 app.state.ocr_reader = ocr_reader
 app.state.pii_analyzer = create_pii_analyzer()
+app.state.gemini_client = create_gemini_client()
+app.state.openrouter_client = create_openrouter_client()
 
 @app.get('/')
 def home():
