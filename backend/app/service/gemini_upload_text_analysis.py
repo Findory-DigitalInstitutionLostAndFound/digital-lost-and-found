@@ -10,31 +10,46 @@ def analyze_text_for_sensitive_data(data: str, gemini_client=None, openrouter_cl
         \"\"\"{data}\"\"\"
 
         Your tasks:
-        1. Detect any sensitive information (Finnish HETU, serial numbers, names, phone numbers, emails, addresses, unique marks, etc.).
-        2. Create a clean public description that is suitable to show on the website.
-        - Remove all sensitive details.
-        - Keep the description natural and useful for people looking for their lost item.
-        - Do NOT use [REDACTED] or any placeholder text.
-        - Example of good public description: "Found a gold ring near the library."
 
-        Return ONLY valid JSON in this exact format:
+        1. Detect any sensitive information that should NOT be shown publicly:
+        - Finnish personal identity codes (HETU / henkilötunnus)
+        - Full names of people
+        - Phone numbers, emails, home addresses
+        - Credit/debit card numbers
+        - Exact serial numbers, unique engravings, or codes that can be used to fraudulently claim the item
+        - Student ID numbers or other unique personal identifiers
+
+        2. Create a clean and attractive public description:
+        - Keep as many useful details as possible (color, brand, material, size, condition, location, etc.)
+        - Only remove the sensitive information listed above
+        - Make the description natural and helpful for the real owner to recognize their item
+        - Do NOT use [REDACTED] or any placeholder text
+        - Do NOT make the description too short or generic
+
+        3. Decide if the item is high-value:
+        - Return true if the item is likely worth 100 euros or more
+        - Return false if it is likely worth less than 100 euros
+        - Do not mentionhow much it costs inside public description
+
+        Return ONLY valid JSON in this exact format (no markdown, no extra text):
 
         {{
         "has_sensitive_data": true or false,
         "sensitive_items": [
             {{
-            "type": "hetu | serial_number | name | phone | email | address | other",
-            "description": "what was found"
+            "type": "hetu | serial_number | name | phone | email | address | credit_card | other",
+            "description": "short description of what was found"
             }}
         ],
-        "public_description": "A clean and natural description that can be shown publicly",
+        "public_description": "A clean, natural and attractive description that can be shown publicly",
+        "is_high_value": true or false,
         "recommendation": "safe_to_publish | needs_redaction | high_risk"
         }}
         """
 
     # Try gemini
     if gemini_client:
-        for model in ["gemini-3.8-flsh", "gemini-3.5-flsh"]:
+        for model in ["gemini-3.8-flash", "gemini-3.5-flash"]:
             try:
                 print(f"Trying Gemini: {model}")
                 response = gemini_client.models.generate_content(
