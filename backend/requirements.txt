@@ -4,3 +4,11 @@ supabase==2.15.1
 python-dotenv==1.1.0
 pyjwt==2.10.1
 email-validator>=2.0.0
+python-multipart==0.0.32
+easyocr==1.7.2
+opencv-python-headless==5.0.0.93
+numpy==2.4.6
+Pillow==12.3.0
+presidio-analyzer==2.2.364
+google-genai==2.31.0
+openai==3.31.0
