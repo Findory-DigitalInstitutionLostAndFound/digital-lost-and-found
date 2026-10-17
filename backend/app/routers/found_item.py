@@ -20,7 +20,7 @@ async def create_found_item(
     image: Optional[UploadFile] = File(None),
     current_user: dict = Depends(get_current_user)
     ):
-    
+
     # ========== Basic validation ==========
     if not title.strip():
         raise HTTPException(status_code=400, detail="Title is required.")
@@ -55,7 +55,7 @@ async def create_found_item(
 
     # Use the cleaned text that Gemini returned
     public_description = gemini_result.get("public_description") or description  # Fallback to original if cleaned_text is not available
-
+    print("Public description after Gemini cleaning:", public_description)
     # Double check the cleaned description with Presidio to ensure no sensitive data remains
     if is_sensitive_text(public_description, analyzer):
         return {
@@ -69,6 +69,19 @@ async def create_found_item(
     user_id = current_user.get("sub")
     tag_list = [tag.strip() for tag in tags.split(",") if tag.strip()]  # Convert comma-separated string to list
 
+    if image:
+        # Get the original image URL if an image was uploaded
+        upload_original_image = await FoundItemsService.upload_original_image(image)
+        original_image_url = upload_original_image.get("public_url")
+
+        upload_cleaned_image = await FoundItemsService.upload_cleaned_image(image)
+        print("\nCleaned image upload response:", upload_cleaned_image)
+        cleaned_image_url = upload_cleaned_image.get("public_url")
+        print("\nCleaned image URL:", cleaned_image_url)
+    else:
+        original_image_url = None
+        cleaned_image_url = None
+
     item_data = FoundItemCreateSchema(
         user_id =  user_id,
         item_type = "found",
@@ -80,8 +93,8 @@ async def create_found_item(
         event_timestamp = date_found,
         is_high_valued = gemini_result.get("is_high_value", False),
         has_sensitive_data= gemini_result.get("has_sensitive_data", False),
-        original_image_url = None, 
-        blurred_image_url = None,  
+        original_image_url = original_image_url,
+        blurred_image_url = cleaned_image_url,  
         ai_tags = tag_list, 
         status = "open" 
     )
