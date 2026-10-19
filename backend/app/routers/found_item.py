@@ -5,6 +5,7 @@ from app.service.gemini_upload_text_analysis import analyze_text_for_sensitive_d
 from typing import Optional
 from app.routers.auth import get_current_user
 from app.service.found_items_service import FoundItemsService
+from app.service.image_redaction_service import redact_sensitive_areas
 
 router = APIRouter()
 
@@ -56,12 +57,8 @@ async def create_found_item(
     # Use the cleaned text that Gemini returned
     public_description = gemini_result.get("public_description") or description  # Fallback to original if cleaned_text is not available
     print("Public description after Gemini cleaning:", public_description)
-    # Double check the cleaned description with Presidio to ensure no sensitive data remains
-    if is_sensitive_text(public_description, analyzer):
-        return {
-            "status": "rejected",
-            "message": "The description contains sensitive data.Please remove names, codes, serial numbers, ids, HETU before submitting."
-        }
+    # Double check the cleaned description with Presidio to ensure no sensitive data remains\
+    needs_review = is_sensitive_text(public_description, analyzer)
 
    #=======From here start to save the found item to the database====#
 
@@ -70,11 +67,44 @@ async def create_found_item(
     tag_list = [tag.strip() for tag in tags.split(",") if tag.strip()]  # Convert comma-separated string to list
 
     if image:
+        # read the image only once
+        image_bytes = await image.read()
+        await image.seek(0)  # Reset the file pointer to the beginning for further use
+
         # Get the original image URL if an image was uploaded
         upload_original_image = await FoundItemsService.upload_original_image(image)
         original_image_url = upload_original_image.get("public_url")
 
-        upload_cleaned_image = await FoundItemsService.upload_cleaned_image(image)
+        # Create cleaned img
+        reader = request.app.state.ocr_reader
+        analyzer = request.app.state.pii_analyzer
+
+        # Determine if the category is related to jewellery or if the item is high value
+        jewellery_categories = {"ring", "rings", "jewellery", "jewelry", "necklace", "bracelet", "watch", "earring"}
+
+        force_all = (
+            category.strip().lower() in jewellery_categories
+            or gemini_result.get("is_high_value", False)
+        )
+
+        # Determine if the category is related to ID or identity documents
+        id_categories = {"id", "identity", "passport", "license", "card", "henkilökortti"}
+
+        force_all = (
+            category.strip().lower() in jewellery_categories
+            or category.strip().lower() in id_categories
+            or gemini_result.get("is_high_value", False)
+        )
+
+        cleaned_bytes = redact_sensitive_areas(
+            image_bytes, 
+            reader, 
+            analyzer,
+            force_redact_all_text=force_all
+        )
+
+        # Upload cleaned image 
+        upload_cleaned_image = await FoundItemsService.upload_cleaned_image(cleaned_bytes)
         print("\nCleaned image upload response:", upload_cleaned_image)
         cleaned_image_url = upload_cleaned_image.get("public_url")
         print("\nCleaned image URL:", cleaned_image_url)
@@ -104,12 +134,20 @@ async def create_found_item(
 
 
     # If we get here, the description is clean,then
-    return {
+    response = {
         "status": "success",
-        "message": "Found item created successfully.",
         "item_id": saved_item.get("id"),
         "public_description": public_description,
         "has_sensitive_data": gemini_result.get("has_sensitive_data", False),
         "is_high_value": gemini_result.get("is_high_value", False),
         "ai_tags": tag_list
     }
+    if needs_review:
+        response["message"] = (
+            "Found item created, but the public description might still contain sensitive data. "
+            "Please review and edit it in your profile."
+        )
+    else:
+        response["message"] = "Found item created successfully."
+
+    return response

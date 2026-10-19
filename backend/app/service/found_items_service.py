@@ -17,7 +17,11 @@ class FoundItemsService:
             
             return response.data[0]  # Return the created item data
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            print(f"Error details: {str(e)}")
+            raise HTTPException(
+                status_code=500, 
+                detail= "An error occurred while saving the found item: "
+            )
 
     @staticmethod
     async def upload_original_image(file: UploadFile):
@@ -59,36 +63,27 @@ class FoundItemsService:
                 "message": "Image uploaded successfully.",
                 "public_url": public_url
             }
-        except Exception as e:
+        except Exception as e:            
+            print(f"Error details: {str(e)}")
             raise HTTPException(
                 status_code=500, 
-                detail=f"An error occurred while uploading the image. {str(e)}"
+                detail=f"An error occurred while uploading the original image."
             )
 
 
     @staticmethod
-    async def upload_cleaned_image(file: UploadFile):
-        ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"]
-        try:
-                    
-            if file.content_type not in ALLOWED_TYPES:
-                raise HTTPException(
-                    status_code=400, 
-                    detail="Invalid file type. Only JPEG, PNG, and WEBP are allowed.")
-        
-            # Read the file content and check its size
-            file_content = await file.read()                    
-                     
-            # Generate a unique filename to avoid collisions
-            file_extension = file.filename.split(".")[-1]
-            unique_filename = f"{uuid.uuid4()}.{file_extension}"
+    async def upload_cleaned_image(file: bytes):
+        try:        
+            # Generate a unique filename to avoid collisions , always cleaned image will be jpg
+            unique_filename = f"{uuid.uuid4()}.jpg"  
             file_path = unique_filename  
+
             # Upload the file to the "cleaned_images" bucket in Supabase storage
             response = supabase.storage.from_("cleaned_images").upload(
                 path=file_path, 
-                file=file_content,
+                file=file,
                 file_options={
-                    "content_type": file.content_type
+                    "content_type": "image/jpeg"
                 }
             )
         
@@ -100,6 +95,7 @@ class FoundItemsService:
                 "public_url": public_url
             }
         except Exception as e:
+            print(f"Error details: {str(e)}")
             raise HTTPException(
                 status_code=500, 
-                detail=f"An error occurred while uploading the image. {str(e)}")
+                detail=f"An error occurred while uploading cleaned image.")
