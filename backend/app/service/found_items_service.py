@@ -1,12 +1,13 @@
 from fastapi import HTTPException, UploadFile
-from app.core.config import supabase
+from app.core.supabase_user import get_user_supabase_client
 from app.schemas.items_schema import FoundItemCreateSchema
 import uuid
 
 class FoundItemsService:
     @staticmethod
-    def save_item(item_data: FoundItemCreateSchema):
+    def save_item(item_data: FoundItemCreateSchema, access_token: str):
         try:
+            supabase = get_user_supabase_client(access_token)
             data = item_data.model_dump()  # Convert Pydantic model to dictionary
 
             # Insert the found item into the "items" table
@@ -24,7 +25,7 @@ class FoundItemsService:
             )
 
     @staticmethod
-    async def upload_original_image(file: UploadFile):
+    async def upload_original_image(file: UploadFile, access_token: str):
         MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
         ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"]
         try:
@@ -42,7 +43,7 @@ class FoundItemsService:
                     detail="File is too large. Maximum size is 5 MB."
                 )
             
-             
+            supabase = get_user_supabase_client(access_token)  
             # Generate a unique filename to avoid collisions
             file_extension = file.filename.split(".")[-1]
             unique_filename = f"{uuid.uuid4()}.{file_extension}"
@@ -72,8 +73,9 @@ class FoundItemsService:
 
 
     @staticmethod
-    async def upload_cleaned_image(file: bytes):
-        try:        
+    async def upload_cleaned_image(file: bytes, access_token: str):
+        try:  
+            supabase = get_user_supabase_client(access_token)      
             # Generate a unique filename to avoid collisions , always cleaned image will be jpg
             unique_filename = f"{uuid.uuid4()}.jpg"  
             file_path = unique_filename  

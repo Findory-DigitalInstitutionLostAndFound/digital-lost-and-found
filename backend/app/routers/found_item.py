@@ -21,6 +21,11 @@ async def create_found_item(
     image: Optional[UploadFile] = File(None),
     current_user: dict = Depends(get_current_user)
     ):
+    # Get the access token from the request cookies
+    token = request._cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated. Access token is missing.")
+    
 
     # ========== Basic validation ==========
     if not title.strip():
@@ -64,6 +69,7 @@ async def create_found_item(
 
     # get the user id
     user_id = current_user.get("sub")
+    tag_list = []
     tag_list = [tag.strip() for tag in tags.split(",") if tag.strip()]  # Convert comma-separated string to list
 
     if image:
@@ -72,7 +78,7 @@ async def create_found_item(
         await image.seek(0)  # Reset the file pointer to the beginning for further use
 
         # Get the original image URL if an image was uploaded
-        upload_original_image = await FoundItemsService.upload_original_image(image)
+        upload_original_image = await FoundItemsService.upload_original_image(image, token)
         original_image_url = upload_original_image.get("public_url")
 
         # Create cleaned img
@@ -104,7 +110,7 @@ async def create_found_item(
         )
 
         # Upload cleaned image 
-        upload_cleaned_image = await FoundItemsService.upload_cleaned_image(cleaned_bytes)
+        upload_cleaned_image = await FoundItemsService.upload_cleaned_image(cleaned_bytes, token)
         print("\nCleaned image upload response:", upload_cleaned_image)
         cleaned_image_url = upload_cleaned_image.get("public_url")
         print("\nCleaned image URL:", cleaned_image_url)
@@ -130,7 +136,7 @@ async def create_found_item(
     )
 
     # Save to db
-    saved_item = FoundItemsService.save_item(item_data)
+    saved_item = FoundItemsService.save_item(item_data, token)
 
 
     # If we get here, the description is clean,then
@@ -148,6 +154,8 @@ async def create_found_item(
             "Please review and edit it in your profile."
         )
     else:
-        response["message"] = "Found item created successfully."
+        response["message"] = "Found item created successfully.."
+
+    print("\nFinal response to be returned:", response)
 
     return response
