@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 from typing import Optional
 
-class FoundItemCreateSchema(BaseModel):
+class ItemCreateSchema(BaseModel):
     user_id: str
-    item_type: str = "found"
+    item_type: str
     title: str
     description: str
     public_description: str

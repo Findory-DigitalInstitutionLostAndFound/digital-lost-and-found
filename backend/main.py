@@ -4,7 +4,7 @@ from app.routers.auth import router as auth_router
 import easyocr # For Optical Character Recognition (OCR)
 from presidio_analyzer import AnalyzerEngine # For sensitive data detection
 from app.core.pii import create_pii_analyzer # Custom function to create a Presidio analyzer with Finnish PII recognizer
-from app.routers.found_item import router as found_item_router
+from app.routers.create_item import router as create_item_router
 from app.core.gemini import create_gemini_client
 from app.core.openrouter import create_openrouter_client
 
@@ -23,7 +23,7 @@ app.add_middleware(
 # include auth router
 app.include_router(auth_router)
 # include found item router
-app.include_router(found_item_router)
+app.include_router(create_item_router)
 
 
 # Initialize heavy models only at startup to avoid reloading them on every request

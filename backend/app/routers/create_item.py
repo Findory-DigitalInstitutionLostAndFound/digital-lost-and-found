@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends, Request, HTTPException, Form, UploadFile, File
-from app.schemas.items_schema import FoundItemCreateSchema
+from app.schemas.items_schema import ItemCreateSchema
 from app.service.sensitive_data_service import is_sensitive_text
 from app.service.gemini_upload_text_analysis import analyze_text_for_sensitive_data
 from typing import Optional
 from app.routers.auth import get_current_user
-from app.service.found_items_service import FoundItemsService
+from app.service.create_items_service import CreateItemsService
 from app.service.image_redaction_service import redact_sensitive_areas
 
 router = APIRouter()
 
-@router.post("/found-items")
+@router.post("/create-items")
 async def create_found_item(
     request: Request, 
     title: str = Form(...),
@@ -19,15 +19,21 @@ async def create_found_item(
     date_found: str = Form(...),
     tags: Optional[str] = Form(None),          
     image: Optional[UploadFile] = File(None),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    mode: str = Form(...)
     ):
     # Get the access token from the request cookies
-    token = request._cookies.get("access_token")
+    token = request.cookies.get("access_token")
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated. Access token is missing.")
     
 
     # ========== Basic validation ==========
+    if mode.strip() not in ["found", "lost"]:
+        raise HTTPException(status_code=400, detail="Invalid mode. Must be 'found' or 'lost'.")
+    if mode == "":
+        raise HTTPException(status_code=400, detail="Mode is required.")
+    
     if not title.strip():
         raise HTTPException(status_code=400, detail="Title is required.")
 
@@ -65,7 +71,7 @@ async def create_found_item(
     # Double check the cleaned description with Presidio to ensure no sensitive data remains\
     needs_review = is_sensitive_text(public_description, analyzer)
 
-   #=======From here start to save the found item to the database====#
+   #=======From here start to save the items to the database====#
 
     # get the user id
     user_id = current_user.get("sub")
@@ -78,7 +84,7 @@ async def create_found_item(
         await image.seek(0)  # Reset the file pointer to the beginning for further use
 
         # Get the original image URL if an image was uploaded
-        upload_original_image = await FoundItemsService.upload_original_image(image, token)
+        upload_original_image = await CreateItemsService.upload_original_image(image, token)
         original_image_url = upload_original_image.get("public_url")
 
         # Create cleaned img
@@ -110,7 +116,7 @@ async def create_found_item(
         )
 
         # Upload cleaned image 
-        upload_cleaned_image = await FoundItemsService.upload_cleaned_image(cleaned_bytes, token)
+        upload_cleaned_image = await CreateItemsService.upload_cleaned_image(cleaned_bytes, token)
         print("\nCleaned image upload response:", upload_cleaned_image)
         cleaned_image_url = upload_cleaned_image.get("public_url")
         print("\nCleaned image URL:", cleaned_image_url)
@@ -118,9 +124,9 @@ async def create_found_item(
         original_image_url = None
         cleaned_image_url = None
 
-    item_data = FoundItemCreateSchema(
+    item_data = ItemCreateSchema(
         user_id =  user_id,
-        item_type = "found",
+        item_type = mode,
         title = title,
         description = description,
         public_description = public_description,
@@ -136,7 +142,7 @@ async def create_found_item(
     )
 
     # Save to db
-    saved_item = FoundItemsService.save_item(item_data, token)
+    saved_item = CreateItemsService.save_item(item_data, token)
 
 
     # If we get here, the description is clean,then
@@ -150,11 +156,11 @@ async def create_found_item(
     }
     if needs_review:
         response["message"] = (
-            "Found item created, but the public description might still contain sensitive data. "
+            f"{mode} item created, but the public description might still contain sensitive data. "
             "Please review and edit it in your profile."
         )
     else:
-        response["message"] = "Found item created successfully.."
+        response["message"] = f"{mode} item created successfully.."
 
     print("\nFinal response to be returned:", response)
 

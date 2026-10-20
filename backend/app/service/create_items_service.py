@@ -1,11 +1,11 @@
 from fastapi import HTTPException, UploadFile
 from app.core.supabase_user import get_user_supabase_client
-from app.schemas.items_schema import FoundItemCreateSchema
+from app.schemas.items_schema import ItemCreateSchema
 import uuid
 
-class FoundItemsService:
+class CreateItemsService:
     @staticmethod
-    def save_item(item_data: FoundItemCreateSchema, access_token: str):
+    def save_item(item_data: ItemCreateSchema, access_token: str):
         try:
             supabase = get_user_supabase_client(access_token)
             data = item_data.model_dump()  # Convert Pydantic model to dictionary
@@ -14,14 +14,14 @@ class FoundItemsService:
             response = supabase.table("items").insert(data).execute()
 
             if not response.data:
-                raise HTTPException(status_code=500, detail="Failed to store the found item.")
+                raise HTTPException(status_code=500, detail=f"Failed to store the {item_data.item_type} item.")
             
             return response.data[0]  # Return the created item data
         except Exception as e:
             print(f"Error details: {str(e)}")
             raise HTTPException(
                 status_code=500, 
-                detail= "An error occurred while saving the found item: "
+                detail= f"An error occurred while saving the {item_data.item_type} item."
             )
 
     @staticmethod
