@@ -106,9 +106,11 @@ export function ReportItemPage({ mode, navigate, isGuest = false }: Props) {
         location: form.location,
         date_found: form.date,
         tags,
-        image: imageFile
+        image: imageFile,
+        item_type: mode
       }
-      const res = await reportItemService.reportFoundItem(data)
+
+      const res = await reportItemService.reportItem(data)
 
       setMessage(res.message || 'Found item created successfully.')
       setLoading(false)
@@ -132,8 +134,21 @@ export function ReportItemPage({ mode, navigate, isGuest = false }: Props) {
       }, 3500)
 
     } catch (err: any) {
-      const detail = err.response?.data?.detail || err.message || 'Failed to submit report'
-      setErrors({ submit: detail })
+      const detail = err.response?.data?.detail
+      let message = 'An error occurred while submitting the report.'
+
+      if(typeof detail === 'string') {
+        message = detail
+      } else if (Array.isArray(detail) && detail.length > 0) {
+        message = detail
+        .map((d: any) => d.msg || JSON.stringify(d))
+        .join(' ')
+      } else if (detail && typeof detail === 'object') {
+        message = detail.msg || JSON.stringify(detail)
+      } else if (err.message) {
+        message = err.message
+      }
+      setErrors({ submit: message })
     } finally {
       setLoading(false)
     }
