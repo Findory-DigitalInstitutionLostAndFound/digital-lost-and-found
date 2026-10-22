@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react'
 import { ArrowLeft, X, Camera } from 'lucide-react'
 import { Navbar } from '../components/ui/Navbar'
+import { reportItemService } from '../services/reportItemService'
 
-const CATEGORIES = ['Accessories', 'Electronics', 'Documents', 'Clothing', 'Keys', 'Bags', 'Other']
+const CATEGORIES = ['Accessories', 'Electronics', 'Documents', 'Clothing', 'Keys', 'Bags', 'Jewellery', 'ID', 'Other']
 const TAG_SUGGESTIONS = ['black', 'brown', 'blue', 'red', 'white', 'small', 'large', 'leather', 'metal', 'plastic', 'keys', 'wallet', 'phone', 'laptop', 'student-id']
 const PRIVACY_PATTERNS = [
   { pattern: /\b\d{3}-\d{2}-\d{4}\b/, label: 'SSN' },
@@ -34,6 +35,9 @@ export function ReportItemPage({ mode, navigate, isGuest = false }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [privacyWarning, setPrivacyWarning] = useState<string | null>(null)
   const [step, setStep] = useState<1 | 2>(1)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
 
   const checkPrivacy = (text: string): string | null => {
     for (const { pattern, label } of PRIVACY_PATTERNS) {
@@ -59,6 +63,7 @@ export function ReportItemPage({ mode, navigate, isGuest = false }: Props) {
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    setImageFile(file)
     const reader = new FileReader()
     reader.onload = ev => setImagePreview(ev.target?.result as string)
     reader.readAsDataURL(file)
@@ -75,7 +80,7 @@ export function ReportItemPage({ mode, navigate, isGuest = false }: Props) {
     if (!form.description.trim()) e.description = 'Description is required'
     if (!form.category) e.category = 'Category is required'
     if (!form.location.trim()) e.location = 'Location is required'
-    if (tags.length === 0) e.tags = 'Add at least one tag'
+    //if (tags.length === 0) e.tags = 'Add at least one tag'
     return e
   }
 
@@ -86,10 +91,67 @@ export function ReportItemPage({ mode, navigate, isGuest = false }: Props) {
     setStep(2)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (privacyWarning) return
-    alert(`Successfully reported ${mode} item: ${form.title}`)
-    navigate(isGuest ? 'guest' : 'dashboard')
+
+    try{
+      setLoading(true)
+      setErrors({})
+      setMessage(null)
+
+      const data = {
+        title: form.title,
+        description: form.description,
+        category: form.category,
+        location: form.location,
+        date_found: form.date,
+        tags,
+        image: imageFile,
+        item_type: mode
+      }
+
+      const res = await reportItemService.reportItem(data)
+
+      setMessage(res.message || 'Found item created successfully.')
+      setLoading(false)
+
+      setImageFile(null)
+      setImagePreview(null)
+      setForm({
+        name: '',
+        email: '',
+        phone: '',
+        title: '',
+        description: '',
+        category: '',
+        location: '',
+        date: new Date().toISOString().split('T')[0],
+      })
+
+      // Wait 2.5 seconds so the user can read the message
+      setTimeout(() => {
+        navigate(isGuest ? 'guest' : 'dashboard')
+      }, 3500)
+
+    } catch (err: any) {
+      const detail = err.response?.data?.detail
+      let message = 'An error occurred while submitting the report.'
+
+      if(typeof detail === 'string') {
+        message = detail
+      } else if (Array.isArray(detail) && detail.length > 0) {
+        message = detail
+        .map((d: any) => d.msg || JSON.stringify(d))
+        .join(' ')
+      } else if (detail && typeof detail === 'object') {
+        message = detail.msg || JSON.stringify(detail)
+      } else if (err.message) {
+        message = err.message
+      }
+      setErrors({ submit: message })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -321,8 +383,30 @@ export function ReportItemPage({ mode, navigate, isGuest = false }: Props) {
             )}
           </div>
 
+          {/* Loading / message / error */}
+          {loading && (
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-[#0E0D0B]/25 border-t-[#0E0D0B] rounded-full animate-spin" />
+              <p className="font-mono text-xs text-[#0E0D0B]/70">
+                Submitting… please wait (AI may take a few seconds)
+              </p>
+            </div>
+          )}
+
+          {message && (
+            <div className="border-l-4 border-[#06C167] px-3 py-2 bg-[#06C167]/10">
+              <p className="font-mono text-[11px] text-[#0E0D0B]">{message}</p>
+            </div>
+          )}
+
+          {errors.submit && (
+            <div className="border-l-4 border-[#D93B2B] px-3 py-2 bg-[#D93B2B]/10">
+              <p className="font-mono text-[11px] text-[#D93B2B]">{errors.submit}</p>
+            </div>
+          )}
+
           <div className="flex gap-3 pt-2">
-            <button onClick={() => setStep(1)} className="border border-[#0E0D0B]/20 px-4 py-2 font-mono text-xs uppercase">← Back</button>
+            <button onClick={() => setStep(1)} className="border border-[#0E0D0B]/20 px-4 py-2 font-mono text-xs uppercase">← Back</button>          
             <button
               onClick={handleSubmit}
               disabled={!!privacyWarning}
