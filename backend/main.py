@@ -7,6 +7,7 @@ from app.core.pii import create_pii_analyzer # Custom function to create a Presi
 from app.routers.create_item import router as create_item_router
 from app.core.gemini import create_gemini_client
 from app.core.openrouter import create_openrouter_client
+from app.routers.guest_item import router as guest_items_router
 
 # create fast api
 app = FastAPI(title="Digital Lost and Found API")  
@@ -24,6 +25,8 @@ app.add_middleware(
 app.include_router(auth_router)
 # include found item router
 app.include_router(create_item_router)
+# include guest item router 
+app.include_router(guest_items_router, tags=["Guest Items"])
 
 
 # Initialize heavy models only at startup to avoid reloading them on every request

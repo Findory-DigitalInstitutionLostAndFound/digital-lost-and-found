@@ -26,7 +26,10 @@ export const reportItemService = {
         formData.append('location', data.location);
         formData.append('date_found', data.date_found);
         formData.append('tags', data.tags.join(','));
-        formData.append('mode', data.item_type);
+        // if it's an authenticated user request
+        if (!data.isGuest) {
+            formData.append('mode', data.item_type);
+        }
 
         if (data.image) {
             formData.append('image', data.image);
