@@ -17,7 +17,5 @@ class ItemCreateSchema(BaseModel):
     blurred_image_url: Optional[str] = None
     status: str = "open"  # Default status is "Open"
     # For guests 
-    guest_name: Optional[str] = None
-    guest_email: Optional[str] = None
-    guest_phone: Optional[str] = None
-    match_token: Optional[str] = None
+    guest_id: Optional[str] = None
+    guest_match_token: Optional[str] = None

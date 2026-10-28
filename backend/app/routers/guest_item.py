@@ -62,7 +62,7 @@ async def create_guest_item(
         cleaned_image_url = upload_clean.get("public_url")
 
     # Generate Match Token and parse tags
-    match_token = str(uuid.uuid4())
+    guest_match_token = str(uuid.uuid4())
     tag_list = [tag.strip() for tag in tags.split(",") if tag.strip()] if tags else []
 
     # Build dictionary and save using guest service method
@@ -82,15 +82,20 @@ async def create_guest_item(
         blurred_image_url=cleaned_image_url,
         status="open",
         guest_name=guest_name,
-        guest_email=guest_email,
-        guest_phone=guest_phone,
-        match_token=match_token
+        guest_match_token=guest_match_token
     )
 
-    saved_item = GuestItemsService.save_guest_item(item_data)
+    # Bundle guest details for the 'guests' table
+    guest_info = {
+        "full_name": guest_name,
+        "email": guest_email,
+        "phone": guest_phone
+    }
+
+    saved_item = GuestItemsService.save_guest_item(item_data, guest_info)
 
     # Queue email dispatch in background
-    match_link = f"https://findory.app/guest/matches?token={match_token}"
+    match_link = f"https://findory.app/guest/matches?token={guest_match_token}"
     background_tasks.add_task(
         send_guest_match_email,
         email=guest_email,
