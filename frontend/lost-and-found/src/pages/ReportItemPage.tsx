@@ -1,19 +1,28 @@
 import React, { useState, useRef } from 'react'
 import { ArrowLeft, X, Camera } from 'lucide-react'
+import { Navbar } from '../components/ui/Navbar'
+import { reportItemService } from '../services/reportItemService'
 
-const CATEGORIES = ['Accessories', 'Electronics', 'Documents', 'Clothing', 'Keys', 'Bags', 'Other']
+const CATEGORIES = ['Accessories', 'Electronics', 'Documents', 'Clothing', 'Keys', 'Bags', 'Jewellery', 'ID', 'Other']
 const TAG_SUGGESTIONS = ['black', 'brown', 'blue', 'red', 'white', 'small', 'large', 'leather', 'metal', 'plastic', 'keys', 'wallet', 'phone', 'laptop', 'student-id']
 const PRIVACY_PATTERNS = [
   { pattern: /\b\d{3}-\d{2}-\d{4}\b/, label: 'SSN' },
   { pattern: /\b(?:\d[ -]*?){13,16}\b/, label: 'Credit Card Number' },
 ]
 
-interface Props { mode: 'lost' | 'found'; navigate: (page: string) => void }
+interface Props { 
+  mode: 'lost' | 'found'; 
+  navigate: (page: string) => void
+  isGuest?: boolean // Prop to indicate if the user is a guest
+ }
 
-export function ReportItemPage({ mode, navigate }: Props) {
+export function ReportItemPage({ mode, navigate, isGuest = false }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
     title: '',
     description: '',
     category: '',
@@ -26,6 +35,9 @@ export function ReportItemPage({ mode, navigate }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [privacyWarning, setPrivacyWarning] = useState<string | null>(null)
   const [step, setStep] = useState<1 | 2>(1)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
 
   const checkPrivacy = (text: string): string | null => {
     for (const { pattern, label } of PRIVACY_PATTERNS) {
@@ -51,6 +63,7 @@ export function ReportItemPage({ mode, navigate }: Props) {
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    setImageFile(file)
     const reader = new FileReader()
     reader.onload = ev => setImagePreview(ev.target?.result as string)
     reader.readAsDataURL(file)
@@ -58,11 +71,16 @@ export function ReportItemPage({ mode, navigate }: Props) {
 
   const validate = () => {
     const e: Record<string, string> = {}
+    if (isGuest) {
+      if (!form.name.trim()) e.name = 'Name is required'
+      if (!form.email.trim()) e.email = 'Email is required'
+      if (!form.phone.trim()) e.phone = 'Phone is required'
+    }
     if (!form.title.trim()) e.title = 'Title is required'
     if (!form.description.trim()) e.description = 'Description is required'
     if (!form.category) e.category = 'Category is required'
     if (!form.location.trim()) e.location = 'Location is required'
-    if (tags.length === 0) e.tags = 'Add at least one tag'
+    //if (tags.length === 0) e.tags = 'Add at least one tag'
     return e
   }
 
@@ -73,24 +91,89 @@ export function ReportItemPage({ mode, navigate }: Props) {
     setStep(2)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (privacyWarning) return
-    alert(`Successfully reported ${mode} item: ${form.title}`)
-    navigate('dashboard')
+
+    try{
+      setLoading(true)
+      setErrors({})
+      setMessage(null)
+
+      const data = {
+        title: form.title,
+        description: form.description,
+        category: form.category,
+        location: form.location,
+        date_found: form.date,
+        tags,
+        image: imageFile,
+        item_type: mode
+      }
+
+      const res = await reportItemService.reportItem(data)
+
+      setMessage(res.message || 'Found item created successfully.')
+      setLoading(false)
+
+      setImageFile(null)
+      setImagePreview(null)
+      setForm({
+        name: '',
+        email: '',
+        phone: '',
+        title: '',
+        description: '',
+        category: '',
+        location: '',
+        date: new Date().toISOString().split('T')[0],
+      })
+
+      // Wait 2.5 seconds so the user can read the message
+      setTimeout(() => {
+        navigate(isGuest ? 'guest' : 'dashboard')
+      }, 3500)
+
+    } catch (err: any) {
+      const detail = err.response?.data?.detail
+      let message = 'An error occurred while submitting the report.'
+
+      if(typeof detail === 'string') {
+        message = detail
+      } else if (Array.isArray(detail) && detail.length > 0) {
+        message = detail
+        .map((d: any) => d.msg || JSON.stringify(d))
+        .join(' ')
+      } else if (detail && typeof detail === 'object') {
+        message = detail.msg || JSON.stringify(detail)
+      } else if (err.message) {
+        message = err.message
+      }
+      setErrors({ submit: message })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-8 py-8 bg-[#FAF6EC] text-[#0E0D0B] min-h-screen">
+    <div className="min-h-screen bg-[#FAF6EC] text-[#0E0D0B] flex flex-col">
+      <Navbar navigate={navigate} activePage="guest" />
+
+      <div className="max-w-2xl mx-auto px-8 py-8 w-full flex-1">
       {/* Back */}
-      <button onClick={() => navigate('dashboard')}
-        className="flex items-center gap-2 font-mono text-[11px] text-[#0E0D0B]/65 hover:text-[#0E0D0B] mb-8 uppercase tracking-widest transition-colors">
-        <ArrowLeft size={11} /> Dashboard
-      </button>
+      <div className="mb-6">
+        <button
+          onClick={() => navigate(isGuest ? 'guest' : 'dashboard')}
+          className="flex items-center gap-1.5 mono text-xs text-[#282623] dark:text-[#272624] hover:text-[#0E0D0B] dark:hover:text-[#3f3f3d] transition-colors cursor-pointer"
+        >
+          <ArrowLeft size={13} />
+          <span>{isGuest ? 'CHOOSE ANOTHER OPTION' : 'BACK'}</span>
+        </button>
+      </div>
 
       {/* Page title */}
       <div className="border-b border-[#0E0D0B]/10 pb-6 mb-6">
-        <div className="font-mono text-[10px] text-[#0E0D0B]/65 uppercase tracking-widest mb-1">
-          Report
+        <div className="font-mono text-[15px] text-[#0E0D0B]/65 uppercase tracking-widest mb-1">
+          {isGuest ? 'Guest Report' : 'Report'}
         </div>
         <h1 className="text-3xl font-black text-[#0E0D0B]" style={{ fontFamily: 'Fraunces, serif' }}>
           {mode === 'lost' ? 'Lost Item' : 'Found Item'}
@@ -119,15 +202,68 @@ export function ReportItemPage({ mode, navigate }: Props) {
           </div>
           <p className="text-xs text-[#0E0D0B]/80 leading-relaxed">
             {mode === 'lost'
-              ? 'Once reported, bad actors may attempt to claim your item using fake accounts. FoundIt uses institutional email verification — but never release an item to a stranger directly. All handovers go through campus security with identity verification.'
+              ? 'Once reported, bad actors may attempt to claim your item using fake accounts. Findory uses institutional email verification — but never release an item to a stranger directly. All handovers go through campus security with identity verification.'
               : 'Do NOT hand over this item to anyone directly. A known fraud pattern: scammers register fake accounts to collect high-value items before the real owner can.'}
           </p>
         </div>
+        {/* Guest extra banner if needed */}
+        {isGuest && (
+          <div className="border-l-4 border-[#06C167] px-4 py-4 bg-[#06C167]/10">
+            <div className="font-mono text-[10px] uppercase tracking-widest mb-1.5 font-bold text-[#06C167]">
+              Safe Handover Process
+            </div>
+            <p className="text-xs text-[#0E0D0B]/80 leading-relaxed">
+              After a match is confirmed, campus security contacts both parties via institutional email. The claimant must verify ownership with details only the true owner would know before pickup is arranged.
+            </p>
+          </div>
+        )}
       </div>
+
+      
 
       {/* Step 1 */}
       {step === 1 && (
         <div className="border border-[#0E0D0B]/20 bg-[#FAF6EC] flex flex-col gap-5 p-6">
+          {/* Guest Contact Section */}
+          {isGuest && (
+            <div className="border-b border-[#0E0D0B]/20 pb-5 mb-2 flex flex-col gap-4">
+              <div className="font-mono text-[10px] uppercase tracking-widest text-[#0E0D0B]/6ish">Your Contact Details</div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="font-mono text-[10px] uppercase tracking-widest block mb-1.5">Full Name</label>
+                  <input
+                    placeholder="Jane Doe"
+                    value={form.name}
+                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                    className="w-full h-11 px-3 font-mono text-xs bg-background border border-[#0E0D0B]/20 text-[#0E0D0B]"
+                  />
+                  {errors.name && <p className="font-mono text-[10px] text-[#D93B2B] mt-1">{errors.name}</p>}
+                </div>
+                <div>
+                  <label className="font-mono text-[10px] uppercase tracking-widest block mb-1.5">Email for Match Link</label>
+                  <input
+                    placeholder="you@example.com"
+                    value={form.email}
+                    onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                    className="w-full h-11 px-3 font-mono text-xs bg-background border border-[#0E0D0B]/20 text-[#0E0D0B]"
+                  />
+                  {errors.email && <p className="font-mono text-[10px] text-[#D93B2B] mt-1">{errors.email}</p>}
+                </div>
+              </div>
+
+              <div>
+                <label className="font-mono text-[10px] uppercase tracking-widest block mb-1.5">Phone (Optional)</label>
+                <input
+                  placeholder="+358 40 123 4567"
+                  value={form.phone}
+                  onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                  className="w-full h-11 px-3 font-mono text-xs bg-background border border-[#0E0D0B]/20 text-[#0E0D0B]"
+                />
+                <p className="font-mono text-[10px] text-[#0E0D0B]/50 mt-1">Only used by University staff if they need to verify the report.</p>
+              </div>
+            </div>
+          )}
           <div className="flex flex-col gap-1.5">
             <label className="font-mono text-[10px] uppercase tracking-widest">Item title</label>
             <input
@@ -247,18 +383,41 @@ export function ReportItemPage({ mode, navigate }: Props) {
             )}
           </div>
 
+          {/* Loading / message / error */}
+          {loading && (
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-[#0E0D0B]/25 border-t-[#0E0D0B] rounded-full animate-spin" />
+              <p className="font-mono text-xs text-[#0E0D0B]/70">
+                Submitting… please wait (AI may take a few seconds)
+              </p>
+            </div>
+          )}
+
+          {message && (
+            <div className="border-l-4 border-[#06C167] px-3 py-2 bg-[#06C167]/10">
+              <p className="font-mono text-[11px] text-[#0E0D0B]">{message}</p>
+            </div>
+          )}
+
+          {errors.submit && (
+            <div className="border-l-4 border-[#D93B2B] px-3 py-2 bg-[#D93B2B]/10">
+              <p className="font-mono text-[11px] text-[#D93B2B]">{errors.submit}</p>
+            </div>
+          )}
+
           <div className="flex gap-3 pt-2">
-            <button onClick={() => setStep(1)} className="border border-[#0E0D0B]/20 px-4 py-2 font-mono text-xs uppercase">← Back</button>
+            <button onClick={() => setStep(1)} className="border border-[#0E0D0B]/20 px-4 py-2 font-mono text-xs uppercase">← Back</button>          
             <button
               onClick={handleSubmit}
               disabled={!!privacyWarning}
               className={`flex-1 py-2 font-mono text-xs uppercase tracking-wider text-white ${mode === 'lost' ? 'bg-[#D93B2B]' : 'bg-[#06C167] text-[#0E0D0B] font-bold'}`}
             >
-              Submit {mode === 'lost' ? 'Lost' : 'Found'} Report
+              {isGuest ? 'Submit & email my match link' : `Submit ${mode === 'lost' ? 'Lost' : 'Found'} Report`}
             </button>
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

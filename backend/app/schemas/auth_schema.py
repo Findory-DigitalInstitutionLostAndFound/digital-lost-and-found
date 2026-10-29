@@ -19,3 +19,13 @@ class GoogleAuthSchema(BaseModel):
 # Define required payload for supabase token exchange
 class SupabaseCallbackSchema(BaseModel):
     token: str
+
+# Define required payload for forgot password request
+class ForgotPasswordSchema(BaseModel):
+    email: EmailStr
+    redirect_to: str
+
+# Define required payload for reset password request
+class ResetPasswordSchema(BaseModel):
+    new_password: str
+    access_token: str

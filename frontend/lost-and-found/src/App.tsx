@@ -13,23 +13,53 @@ import { useHandleEmailConfirmation } from './hooks/useHandleEmailConfirmation'
 import { authService } from './services/authService'
 // @ts-ignore Vite handles CSS side-effect imports at runtime.
 import './index.css'
+import { GuestPage } from './pages/GuestPage'
 
 
-type Page = 'dashboard' | 'home' | 'browse' | 'login' | 'register' | 'matches' | 'report-lost' | 'report-found'
+type Page = 'dashboard' | 'home' | 'browse' | 'login' | 'register' | 'matches' | 'report-lost' | 'report-found' | 'guest'
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState<Page>('home')
+  const getInitialPage = (): Page => {
+    const path = window.location.pathname.replace('/', '') as Page
+    const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest']
+    return validPages.includes(path) ? path : 'home'
+  }
+  
+  const [currentPage, setCurrentPage] = useState<Page>(getInitialPage())
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
   const [pendingMatchesCount] = useState<number>(1)
 
   // Start with user as null, will be set after login or registration
   const [user, setUser] = useState<{ name: string; email: string; phone: string; user_id: string } | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.replace('/', '') as Page
+      const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest']
+      if (validPages.includes(path)) {
+        setCurrentPage(path)
+      } else {
+        setCurrentPage('home')
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
   const navigate = (page: string, itemId?: number) => {
     if (itemId !== undefined) {
       setSelectedItemId(itemId)
     }
-    setCurrentPage(page as Page)
+    const targetPage = page as Page
+    setCurrentPage(targetPage)
+    
+    // Sync the browser URL with the current page state
+    const newPath = targetPage === 'home' ? '/' : `/${targetPage}`
+    if (window.location.pathname !== newPath) {
+      window.history.pushState({}, '', newPath)
+    }
+
     window.scrollTo(0, 0)
   }
 
@@ -75,7 +105,7 @@ function AppContent() {
   }
 
   // Define public pages that don't require authentication
-  const isPublicPage = currentPage === 'login' || currentPage === 'register' || currentPage === 'home' || currentPage === 'browse'
+  const isPublicPage = currentPage === 'login' || currentPage === 'register' || currentPage === 'home' || currentPage === 'browse' || currentPage === 'guest' || currentPage === 'report-lost' 
   const pageProps = { navigate, selectedItemId } as any
 
   //Protect route guard
@@ -91,13 +121,15 @@ function AppContent() {
       case 'home':
         return <Homepage {...pageProps} />
       case 'browse':
-        return <BrowsePage {...pageProps} />
+        return <BrowsePage {...pageProps} hideNavbar={!!user} hideBackButton={!!user} />
       case 'matches':
         return <MatchesPage {...pageProps} />
+      case 'guest':
+        return <GuestPage {...pageProps} />
       case 'report-lost':
-        return <ReportItemPage mode="lost" navigate={navigate} />
+        return <ReportItemPage mode="lost" navigate={navigate} isGuest={!user}/>
       case 'report-found':
-        return <ReportItemPage mode="found" navigate={navigate} />
+        return <ReportItemPage mode="found" navigate={navigate} isGuest={false}/>
       case 'login':
         return <LoginPage 
           navigate={navigate} 

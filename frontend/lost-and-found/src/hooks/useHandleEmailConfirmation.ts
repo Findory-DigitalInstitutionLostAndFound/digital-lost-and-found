@@ -16,11 +16,19 @@ export function useHandleEmailConfirmation(
     // convert the hash value to a query string so we can easily extract the access_token
     const params = new URLSearchParams(hash.replace('#', '?'))
     const accessToken = params.get('access_token')
+    const type = params.get('type') // This will check if it is a 'recovery' type for password reset or 'signup' for email confirmation
 
     // Clear the hash from the URL to prevent it from being visible in the address bar
     window.history.replaceState(null, '', window.location.pathname)
 
     if (!accessToken) {
+      return
+    }
+    
+    // Password recovery
+    if (type === 'recovery') {
+      sessionStorage.setItem('resetToken', accessToken)
+      navigate('login')
       return
     }
     
