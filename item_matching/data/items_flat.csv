@@ -3,7 +3,7 @@ lost-001,lost,Black leather wallet,wallet,black leather wallet with a small red 
 lost-002,lost,Blue keyring with three keys,keys,three silver keys on a blue round keyring,Campus Restaurant,2026-09-03T13:00:00,standard,False,keys,blue|keys|keyring
 lost-003,lost,Dark green backpack,backpack,dark green backpack with a white mountain logo,5th floor study area,2026-09-04T15:00:00,standard,False,backpack,green|backpack|mountain logo
 lost-004,lost,Silver laptop,laptop,silver 13-inch laptop with a small scratch near the trackpad,IT Lab 2,2026-09-05T17:00:00,high_value,True,laptop,silver|laptop|scratch
-lost-005,lost,Black tablet,tablet,black tablet in a dark blue protective case,Linnanmaa Main Entrance,2026-09-06T10:00:00,high_value,True,tablet,black|tablet|blue case
+lost-005,lost,Black tablet,tablet,black tablet with a dark blue protective case,Linnanmaa Main Entrance,2026-09-06T10:00:00,high_value,True,tablet,black|tablet|blue case
 lost-006,lost,Black smartphone,smartphone,black smartphone with a transparent case and cracked corner,Lecture Hall 2,2026-09-07T12:00:00,high_value,True,smartphone,black|phone|transparent case|crack
 lost-007,lost,White wireless headphones,headphones,white over-ear wireless headphones with a grey case,Student Lounge,2026-09-08T14:00:00,high_value,True,headphones,white|headphones|wireless|grey case
 lost-008,lost,White wireless earbuds,earbuds,white earbuds in a charging case with a small blue mark,Library Group Room 3,2026-09-09T16:00:00,high_value,True,earbuds,white|earbuds|charging case|blue mark

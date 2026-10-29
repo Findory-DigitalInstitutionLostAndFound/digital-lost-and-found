@@ -1,0 +1,5 @@
+# Optional dependencies for pretrained CLIP image matching.
+# Install from item_matching: pip install -r requirements-image.txt
+torch
+transformers
+Pillow
