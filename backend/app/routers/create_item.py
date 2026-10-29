@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request, HTTPException, Form, UploadFile, File
+from fastapi import APIRouter, Depends, Request, HTTPException, Form, UploadFile, File, BackgroundTasks
 from app.schemas.items_schema import ItemCreateSchema
 from app.service.sensitive_data_service import is_sensitive_text
 from app.service.gemini_upload_text_analysis import analyze_text_for_sensitive_data
@@ -6,6 +6,7 @@ from typing import Optional
 from app.routers.auth import get_current_user
 from app.service.create_items_service import CreateItemsService
 from app.service.image_redaction_service import redact_sensitive_areas
+import uuid
 
 router = APIRouter()
 
@@ -165,3 +166,4 @@ async def create_found_item(
     print("\nFinal response to be returned:", response)
 
     return response
+

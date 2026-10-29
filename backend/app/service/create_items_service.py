@@ -101,3 +101,5 @@ class CreateItemsService:
             raise HTTPException(
                 status_code=500, 
                 detail=f"An error occurred while uploading cleaned image.")
+
+    
