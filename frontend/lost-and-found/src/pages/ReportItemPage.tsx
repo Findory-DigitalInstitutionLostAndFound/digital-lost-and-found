@@ -107,7 +107,13 @@ export function ReportItemPage({ mode, navigate, isGuest = false }: Props) {
         date_found: form.date,
         tags,
         image: imageFile,
-        item_type: mode
+        item_type: mode,
+        isGuest: isGuest, //routes the payload to the correct `/guest/create-item` endpoint
+        ...(isGuest && {
+          guest_name: form.name,
+          guest_email: form.email,
+          guest_phone: form.phone,
+        }),
       }
 
       const res = await reportItemService.reportItem(data)
