@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 class ItemCreateSchema(BaseModel):
-    user_id: str
+    user_id: Optional[str] = None  # Make optional for guests
     item_type: str
     title: str
     description: str
@@ -16,3 +16,6 @@ class ItemCreateSchema(BaseModel):
     original_image_url: Optional[str] = None
     blurred_image_url: Optional[str] = None
     status: str = "open"  # Default status is "Open"
+    # For guests 
+    guest_id: Optional[str] = None
+    guest_match_token: Optional[str] = None
