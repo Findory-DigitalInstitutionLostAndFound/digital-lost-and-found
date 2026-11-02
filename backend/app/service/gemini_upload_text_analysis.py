@@ -1,11 +1,11 @@
 from google.genai import types
 import json
 
-def analyze_text_for_sensitive_data(data: str, gemini_client=None, openrouter_client=None) -> dict:
+def analyze_text_for_sensitive_data(mode: str, data: str, gemini_client=None, openrouter_client=None) -> dict:
     prompt = f"""
         You are a privacy expert for a university lost-and-found system in Finland.
 
-        Analyze the following description of a found item:
+        Analyze the following description of a {mode} item (Note: mode is either "lost" or "found"):
 
         \"\"\"{data}\"\"\"
 

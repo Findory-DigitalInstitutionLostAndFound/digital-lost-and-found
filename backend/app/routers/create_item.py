@@ -11,7 +11,7 @@ import uuid
 router = APIRouter()
 
 @router.post("/create-items")
-async def create_found_item(
+async def create_item(
     request: Request, 
     title: str = Form(...),
     description: str = Form(...),
@@ -63,7 +63,7 @@ async def create_found_item(
         raise HTTPException(status_code=400, detail="Description cannot be empty.")
 
     # Analyze the description for sensitive data using the Gemini client first
-    gemini_result = analyze_text_for_sensitive_data(description, gemini_client, openrouter_client)
+    gemini_result = analyze_text_for_sensitive_data(mode, description, gemini_client, openrouter_client)
     print("Gemini analysis result:", gemini_result)
 
     # Use the cleaned text that Gemini returned
