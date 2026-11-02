@@ -32,8 +32,10 @@ async def create_guest_item(
     gemini_client = request.app.state.gemini_client
     openrouter_client = request.app.state.openrouter_client
 
+    mode = "lost"
+
     description = description.strip()
-    gemini_result = analyze_text_for_sensitive_data(description, gemini_client, openrouter_client)
+    gemini_result = analyze_text_for_sensitive_data(mode, description, gemini_client, openrouter_client )
     public_description = gemini_result.get("public_description") or description
 
     # Handle Image Upload & Redaction 
