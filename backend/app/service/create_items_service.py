@@ -68,7 +68,7 @@ class CreateItemsService:
             print(f"Error details: {str(e)}")
             raise HTTPException(
                 status_code=500, 
-                detail=f"An error occurred while uploading the original image."
+                detail=f"An error occurred while uploading the original image.: {str(e)}"
             )
 
 
@@ -100,6 +100,7 @@ class CreateItemsService:
             print(f"Error details: {str(e)}")
             raise HTTPException(
                 status_code=500, 
-                detail=f"An error occurred while uploading cleaned image.")
+                detail=f"An error occurred while uploading cleaned image.: {str(e)}"
+            )
 
     
