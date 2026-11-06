@@ -3,6 +3,7 @@ from app.core.supabase_user import get_user_supabase_client
 import json
 import base64
 from google.genai import types
+from datetime import datetime, timezone
 
 class CreateClaimService:
     @staticmethod
@@ -33,12 +34,17 @@ class CreateClaimService:
             if exsisting_claim.data:
                 raise HTTPException(status_code=400, detail="You have already have an active claim for this item.")
 
+            # Get current UTC time for last read timestamps
+            current_time = datetime.now(timezone.utc).isoformat()
+            
             # Create a new claim entry in the "claims" table
             claim_data = {
                 "item_id": item_id,
                 "status": "pending",
                 "claimant_user_id": user_id,
                 "claimant_guest_id": None,
+                "owner_last_read_at": current_time, # mark current time as last read for the owner
+                "claimant_last_read_at": current_time, # mark current time as last read for the claimant
             }
             claim_response = supabase.table("claims").insert(claim_data).execute()
             if not claim_response.data:
