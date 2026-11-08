@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
-import { Menu, X, LogOut, Zap } from 'lucide-react'
+import { Menu, X, LogOut, Zap, MessageSquare } from 'lucide-react'
 
 const MOCK_NAV = [
   { label: 'Dashboard', page: 'dashboard', stamp: '01' },
   { label: 'Browse', page: 'browse', stamp: '02' },
   { label: 'Matches', page: 'matches', stamp: '03' },
+  { label: 'Claims', page: 'claims', stamp: '04' },
   { label: 'Report Lost', page: 'report-lost' },
   { label: 'Report Found', page: 'report-found' },
 ]
@@ -15,6 +16,7 @@ interface SidebarProps {
   user?: { name: string; email: string } | null
   logout?: () => void
   pendingMatchesCount?: number
+  pendingClaimsCount?: number
 }
 
 export function Sidebar({
@@ -23,6 +25,7 @@ export function Sidebar({
   user = { name: 'Alex Rivera', email: 'alex.rivera@university.edu' },
   logout = () => alert('Signed out successfully'),
   pendingMatchesCount = 1,
+  pendingClaimsCount = 1,
 }: SidebarProps) {
   const [open, setOpen] = useState(false)
 
@@ -79,6 +82,11 @@ export function Sidebar({
                     <Zap size={9} />{pendingMatchesCount}
                   </span>
                 )}
+                {item.page === 'claims' && pendingClaimsCount > 0 && (
+                  <span className="ml-auto flex items-center gap-1 bg-[#06C167] text-[#0E0D0B] font-mono text-[10px] font-bold px-1.5 py-0.5">
+                    <MessageSquare size={9} />{pendingClaimsCount}
+                  </span>
+                )}
                 {item.page === 'report-lost' && (
                   <span className="ml-auto font-mono text-[10px] text-[#D93B2B]">LOST</span>
                 )}
@@ -121,11 +129,24 @@ export function Sidebar({
         </button>
         <div className="flex items-center gap-3">
           {pendingMatchesCount > 0 && (
-            <span className="flex items-center gap-1 bg-[#D93B2B] text-white font-mono text-[10px] px-1.5 py-0.5">
+            <button 
+              onClick={() => { navigate('matches'); setOpen(false) }}
+              className="flex items-center gap-1 bg-[#D93B2B] text-white font-mono text-[10px] px-1.5 py-0.5 cursor-pointer"
+            >
               <Zap size={9} />{pendingMatchesCount}
-            </span>
+            </button>
           )}
-          <button onClick={() => setOpen(!open)} className="text-[#F0EAD6] p-1">
+          
+          {pendingClaimsCount > 0 && (
+            <button 
+              onClick={() => { navigate('claims'); setOpen(false) }}
+              className="flex items-center gap-1 bg-[#06C167] text-[#0E0D0B] font-mono text-[10px] font-bold px-1.5 py-0.5"
+            >
+              <MessageSquare size={9} />{pendingClaimsCount}
+            </button>
+          )}
+
+          <button onClick={() => setOpen(!open)} className="text-[#F0EAD6] p-1 ml-1">
             {open ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>

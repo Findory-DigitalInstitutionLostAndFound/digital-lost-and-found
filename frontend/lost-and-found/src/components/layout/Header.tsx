@@ -1,9 +1,10 @@
-import { Bell, PlusCircle } from 'lucide-react'
+import { Bell, PlusCircle, MessageSquare } from 'lucide-react'
 
 interface HeaderProps {
   currentPage: string
   navigate: (page: string) => void
   pendingMatchesCount?: number
+  pendingClaimsCount?: number
   title?: string
 }
 
@@ -11,6 +12,7 @@ export function Header({
   currentPage,
   navigate,
   pendingMatchesCount = 1,
+  pendingClaimsCount = 1,
   title,
 }: HeaderProps) {
   const formattedTitle = title || currentPage.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase())
@@ -28,7 +30,7 @@ export function Header({
       </div>
 
       {/* Quick Action Buttons & Status */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         <div className="hidden sm:flex items-center gap-2">
           <button
             onClick={() => navigate('report-lost')}
@@ -45,16 +47,31 @@ export function Header({
         </div>
 
         <div className="h-6 w-px bg-[#0E0D0B]/10 mx-1 hidden sm:block" />
-
+        
+        {/* Matches Quick Button */}
         <button
           onClick={() => navigate('matches')}
-          className="relative p-2.5 bg-[#0E0D0B]/5 hover:bg-[#0E0D0B]/10 text-[#0E0D0B] transition-colors rounded-none flex items-center gap-2"
+          className="relative p-2 bg-[#0E0D0B]/5 hover:bg-[#0E0D0B]/10 text-[#0E0D0B] transition-colors rounded-none flex items-center gap-2"
           title="View Matches"
         >
           <Bell size={16} />
           {pendingMatchesCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center bg-[#D93B2B] text-white font-mono text-[9px] font-bold">
               {pendingMatchesCount}
+            </span>
+          )}
+        </button>
+
+        {/* Claims Quick Button */}
+        <button
+          onClick={() => navigate('claims')}
+          className="relative p-2 bg-[#0E0D0B]/5 hover:bg-[#0E0D0B]/10 text-[#0E0D0B] transition-colors rounded-none flex items-center gap-2"
+          title="View Claims"
+        >
+          <MessageSquare size={16} />
+          {pendingClaimsCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center bg-[#06C167] text-[#0E0D0B] font-mono text-[9px] font-bold">
+              {pendingClaimsCount}
             </span>
           )}
         </button>

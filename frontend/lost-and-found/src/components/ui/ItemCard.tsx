@@ -1,3 +1,6 @@
+import { ShieldCheck } from 'lucide-react'
+import { Button } from './Button'
+
 export type Item = {
   id: number
   type: 'lost' | 'found'
@@ -17,11 +20,20 @@ type ItemCardProps = {
 }
 
 export function ItemCard({ item, navigate }: ItemCardProps) {
+  const isLost = item.type === 'lost'
+  const isMatched = item.status === 'matched'
+
+  const handleActionClick = (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevents card's row onClick from firing
+    navigate('claims', item.id)
+  }
+
+
   return (
     <div
       onClick={() => navigate('detail', item.id)}
       className="border-b border-[#C4BAA6] dark:border-[#2A2925] px-8 py-4 hover:bg-[#F2ECE1] dark:hover:bg-[#1A1916] transition-colors cursor-pointer flex flex-col md:grid gap-4 items-start md:items-center"
-      style={{ gridTemplateColumns: '80px 1fr 180px 180px 110px' }}
+      style={{ gridTemplateColumns: '80px 1fr 140px 140px 90px 130px' }}
     >
       {/* 1. TYPE */}
       <div className="flex flex-col gap-1">
@@ -90,6 +102,33 @@ export function ItemCard({ item, navigate }: ItemCardProps) {
       {/* 5. DATE */}
       <div className="mono text-xs text-[#524B43] dark:text-[#B8B0A4] whitespace-nowrap">
         {item.date}
+      </div>
+
+      {/* 6. ACTION BUTTON */}
+      <div className="justify-self-end w-full md:w-auto" onClick={e => e.stopPropagation()}>
+        {isMatched ? (
+          <div className="mono text-[9px] uppercase font-bold px-2 py-1.5 border border-[#0E0D0B]/20 text-[#0E0D0B]/50 dark:text-[#F0EAD6]/50 flex items-center gap-1 justify-center whitespace-nowrap bg-transparent">
+            <ShieldCheck size={11} /> Claim Pending
+          </div>
+        ) : isLost ? (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleActionClick}
+            className="w-full md:w-auto font-mono text-[9px] uppercase tracking-wider py-1 px-2.5 whitespace-nowrap"
+          >
+            <ShieldCheck size={11} /> I Found This
+          </Button>
+        ) : (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleActionClick}
+            className="w-full md:w-auto font-mono text-[9px] uppercase tracking-wider py-1 px-2.5 whitespace-nowrap"
+          >
+            <ShieldCheck size={11} /> Claim
+          </Button>
+        )}
       </div>
     </div>
   )
