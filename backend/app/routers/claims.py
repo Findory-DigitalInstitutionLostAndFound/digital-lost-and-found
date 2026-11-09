@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from app.api.deps import get_current_user
 from app.service.fetch_claims_details_service import FetchClaimsDetailsService
 from app.service.update_claims_service import UpdateClaimsService
+from app.schemas.claim_schema import StatusUpdateSchema
 
 router = APIRouter()
 
@@ -43,4 +44,22 @@ async def update_last_read(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    
+# endpoint to update claim status
+@router.post("/claims/{claim_id}/update-status")
+async def update_claim_status(
+    claim_id: str,
+    payload: StatusUpdateSchema,
+    request: Request,
+    current_user: dict = Depends(get_current_user)
+):
+    access_token = request.cookies.get("access_token")
+    user_id = current_user.get("sub")
+
+    if not access_token or not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated. Access token or user ID is missing.")
+
+    try:
+        updated_claim = await UpdateClaimsService.update_claim_status(claim_id, user_id, payload.status, access_token)
+        return {"status": "success", "data": updated_claim}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
