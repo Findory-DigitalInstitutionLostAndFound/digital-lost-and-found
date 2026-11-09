@@ -213,13 +213,14 @@ export function BrowsePage({ navigate, hideNavbar = false, hideBackButton = fals
       {/* Table header for desktop */}
       <div
         className="hidden md:grid px-8 py-2 bg-[#0E0D0B] text-[#F0EAD6] gap-4 items-center"
-        style={{ gridTemplateColumns: '80px 1fr 180px 180px 110px' }}
+        style={{ gridTemplateColumns: '80px 1fr 140px 140px 90px 130px' }}
       >
         <span className="mono text-[10px] text-[#A8A095] uppercase tracking-widest">Type</span>
         <span className="mono text-[10px] text-[#A8A095] uppercase tracking-widest">Item & Description</span>
         <span className="mono text-[10px] text-[#A8A095] uppercase tracking-widest">Category / Tags</span>
         <span className="mono text-[10px] text-[#A8A095] uppercase tracking-widest">Location</span>
         <span className="mono text-[10px] text-[#A8A095] uppercase tracking-widest">Date</span>
+        <span className="mono text-[10px] text-[#A8A095] uppercase tracking-widest text-right">Action</span>
       </div>
 
       {/* Ledger Results */}

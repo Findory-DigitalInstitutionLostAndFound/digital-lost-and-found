@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage'
 import { Dashboard } from './pages/Dashboard'
 import { MatchesPage } from './pages/MatchesPage'
 import { ReportItemPage } from './pages/ReportItemPage'
+import { ClaimsPage } from './pages/ClaimsPage'
 import { Sidebar } from './components/layout/Sidebar'
 import { Header } from './components/layout/Header'
 import { ThemeProvider } from './components/context/ThemeProvider'
@@ -16,18 +17,19 @@ import './index.css'
 import { GuestPage } from './pages/GuestPage'
 
 
-type Page = 'dashboard' | 'home' | 'browse' | 'login' | 'register' | 'matches' | 'report-lost' | 'report-found' | 'guest'
+type Page = 'dashboard' | 'home' | 'browse' | 'login' | 'register' | 'matches' | 'report-lost' | 'report-found' | 'guest' | 'claims'
 
 function AppContent() {
   const getInitialPage = (): Page => {
     const path = window.location.pathname.replace('/', '') as Page
-    const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest']
+    const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest', 'claims']
     return validPages.includes(path) ? path : 'home'
   }
   
   const [currentPage, setCurrentPage] = useState<Page>(getInitialPage())
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
   const [pendingMatchesCount] = useState<number>(1)
+  const [pendingClaimsCount] = useState<number>(1)
 
   // Start with user as null, will be set after login or registration
   const [user, setUser] = useState<{ name: string; email: string; phone: string; user_id: string } | null>(null)
@@ -35,7 +37,7 @@ function AppContent() {
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname.replace('/', '') as Page
-      const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest']
+      const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest', 'claims']
       if (validPages.includes(path)) {
         setCurrentPage(path)
       } else {
@@ -126,6 +128,8 @@ function AppContent() {
         return <MatchesPage {...pageProps} />
       case 'guest':
         return <GuestPage {...pageProps} />
+      case 'claims':
+        return <ClaimsPage {...pageProps} />
       case 'report-lost':
         return <ReportItemPage mode="lost" navigate={navigate} isGuest={!user}/>
       case 'report-found':
@@ -171,6 +175,7 @@ function AppContent() {
           currentPage={currentPage} 
           navigate={navigate} 
           pendingMatchesCount={pendingMatchesCount}
+          pendingClaimsCount={pendingClaimsCount}
         />
         <main className="flex-1">
           {renderPageView()}
