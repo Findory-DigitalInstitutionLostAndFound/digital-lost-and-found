@@ -1,5 +1,6 @@
 from fastapi import HTTPException, types, BackgroundTasks
 from app.core.supabase_user import get_user_supabase_client
+from app.core.supabase_admin import get_admin_supabase_client
 import json
 import base64
 from google.genai import types
@@ -36,7 +37,7 @@ class CreateClaimService:
 
             # Get current UTC time for last read timestamps
             current_time = datetime.now(timezone.utc).isoformat()
-            
+
             # Create a new claim entry in the "claims" table
             claim_data = {
                 "item_id": item_id,
@@ -82,7 +83,7 @@ class CreateClaimService:
         openrouter_client
     ):
         try:
-            supabase = get_user_supabase_client(access_token)
+            admin_supabase = get_admin_supabase_client()
             # Generate verification questions using AI
             questions = await CreateClaimService.generate_verification_questions(
                 item, 
@@ -103,7 +104,7 @@ class CreateClaimService:
                 "content": formatted_message
             }
 
-            supabase.table("claim_messages").insert(message_data).execute()
+            admin_supabase.table("claim_messages").insert(message_data).execute()
         except Exception as e:
             print(f"Background task failed for claim {claim_id}: {str(e)}")
 
