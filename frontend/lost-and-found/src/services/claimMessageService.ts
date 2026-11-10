@@ -39,9 +39,34 @@ export type FetchClaimsResponse = {
   claims_as_founder: ClaimDetail[];
 };
 
+// chat message type for sending messages
+export type SendMessageData = {
+  claimId: string;
+  content: string;
+  imageFile?: File | null;
+};
+
+
 export const claimsService = {
-  async getClaims(): Promise<FetchClaimsResponse> {
-    const response = await api.get<FetchClaimsResponse>('/claims');
-    return response.data;
-  },
+    async getClaims(): Promise<FetchClaimsResponse> {
+        const response = await api.get<FetchClaimsResponse>('/claims');
+        return response.data;
+    },
+
+    async sendMessage(data: SendMessageData): Promise<void> {
+        const formData = new FormData();
+        formData.append('content', data.content);
+        if (data.imageFile) {
+            formData.append('image', data.imageFile);
+        }
+        await api.post(`/claims/${data.claimId}/send-message`, formData);
+    },
+
+    async updateClaimStatus(claimId: string, newStatus: string): Promise<void> {
+        await api.post(`/claims/${claimId}/update-status`, { status: newStatus });
+    },
+
+    async markClaimAsRead(claimId: string): Promise<void> {
+        await api.post(`/claims/${claimId}/update-last-read`);
+    }
 }
