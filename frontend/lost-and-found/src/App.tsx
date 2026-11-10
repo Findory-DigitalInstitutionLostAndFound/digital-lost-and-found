@@ -108,7 +108,7 @@ function AppContent() {
 
   // Define public pages that don't require authentication
   const isPublicPage = currentPage === 'login' || currentPage === 'register' || currentPage === 'home' || currentPage === 'browse' || currentPage === 'guest' || currentPage === 'report-lost' 
-  const pageProps = { navigate, selectedItemId } as any
+  const pageProps = { navigate, selectedItemId, user} as any
 
   //Protect route guard
   const renderPageView = () => {
