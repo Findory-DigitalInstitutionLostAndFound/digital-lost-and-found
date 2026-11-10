@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile, File
 from app.api.deps import get_current_user
 from app.service.fetch_claims_details_service import FetchClaimsDetailsService
 from app.service.update_claims_service import UpdateClaimsService
 from app.schemas.claim_schema import StatusUpdateSchema
+from typing import Optional
 
 router = APIRouter()
 
@@ -63,3 +64,39 @@ async def update_claim_status(
         return {"status": "success", "data": updated_claim}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# endpoint to send a message in a claim
+@router.post("/claims/{claim_id}/send-message")
+async def send_message(
+    claim_id: str,
+    content: str = Form(...),
+    image: Optional[UploadFile] = File(None),   
+    request: Request = None,
+    current_user: dict = Depends(get_current_user)
+):
+    access_token = request.cookies.get("access_token")
+    user_id = current_user.get("sub")
+
+    if not access_token or not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated. Access token or user ID is missing.")
+
+    image_url = None
+    # if there is a image, it will be uploaded first
+    try:
+        if image:
+            # Upload the image and get the URL
+            image_upload_result = await UpdateClaimsService.upload_message_image(image, access_token)
+            image_url = image_upload_result.get("public_url")
+    
+        message_data = await UpdateClaimsService.send_message(
+            claim_id, 
+            user_id, 
+            content, 
+            image_url, 
+            access_token
+        )
+        return {"status": "success", "data": message_data}
+    except HTTPException as http_exc:
+        raise http_exc 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail= f"Internal server error while sending message: {str(e)}")
