@@ -30,6 +30,7 @@ export function ClaimsPage({ user }: ClaimsPageProps) {
       const data = await claimsService.getClaims();
       setClaimantClaims(data.claims_as_claimant);
       setFounderClaims(data.claims_as_founder);
+      console.log('Fetched claims data:', data);
     } catch (error) {
       console.error('Error fetching claims:', error);
     } finally {
@@ -333,6 +334,11 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
                   {isMine ? 'You' : 'User'} · {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
                 <p className="text-sm leading-relaxed">{entry.content}</p>
+                {entry.image_url && (
+                  <div className="mt-2">
+                    <img src={entry.image_url} alt="Attachement" className="max-w-full max-h-64 rounded border border-[#0E0D0B]/20 object-contain cursor-pointer" onClick={() => window.open(entry.image_url!, '_blank')} />
+                  </div>
+                )}
               </div>
             </div>
           );

@@ -6,6 +6,7 @@ export type ClaimMessage = {
   claim_id: string;
   sender_user_id: string | null;
   sender_guest_id: string | null;
+  image_url: string | null;
   content: string;
   created_at: string;
 };
