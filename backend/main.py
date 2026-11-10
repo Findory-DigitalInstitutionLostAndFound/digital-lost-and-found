@@ -8,6 +8,8 @@ from app.routers.create_item import router as create_item_router
 from app.core.gemini import create_gemini_client
 from app.core.openrouter import create_openrouter_client
 from app.routers.guest_item import router as guest_items_router
+from app.routers.create_claim import router as create_claim_router
+from app.routers.claims import router as claims_router
 
 # create fast api
 app = FastAPI(title="Digital Lost and Found API")  
@@ -27,7 +29,10 @@ app.include_router(auth_router)
 app.include_router(create_item_router)
 # include guest item router 
 app.include_router(guest_items_router, tags=["Guest Items"])
-
+# include create claim router
+app.include_router(create_claim_router)
+# include claims router
+app.include_router(claims_router)
 
 # Initialize heavy models only at startup to avoid reloading them on every request
 ocr_reader = easyocr.Reader(['en'])  # Load the OCR model 
