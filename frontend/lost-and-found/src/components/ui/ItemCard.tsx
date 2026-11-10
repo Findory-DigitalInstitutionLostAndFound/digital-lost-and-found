@@ -1,5 +1,6 @@
 import { ShieldCheck } from 'lucide-react'
 import { Button } from './Button'
+import { claimService } from '../../services/claimService'
 
 export type Item = {
   id: number
@@ -23,9 +24,18 @@ export function ItemCard({ item, navigate }: ItemCardProps) {
   const isLost = item.type === 'lost'
   const isMatched = item.status === 'matched'
 
-  const handleActionClick = (e: React.MouseEvent) => {
+  const handleActionClick = async (e: React.MouseEvent) => {
     e.stopPropagation() // Prevents card's row onClick from firing
-    navigate('claims', item.id)
+    try {
+      // Calling backend service to initialize the claim
+      const result = await claimService.createClaim({ item_id: item.id.toString() })
+      console.log('Claim created:', result)
+
+      // Navigate over to the claims page
+      navigate('claims', item.id)
+    } catch (error) {
+      console.error('Failed to create claim:', error)
+    }
   }
 
 
