@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Check, ChevronDown, ChevronUp, Image, MessageSquare, Send, ShieldAlert, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { claimsService, type ClaimDetail } from '../services/claimMessageService';
+import { createClient } from '@supabase/supabase-js/dist/index.cjs';
 
 type ClaimTab = 'mine' | 'incoming' | 'archived';
 
@@ -25,7 +26,7 @@ export function ClaimsPage({ user }: ClaimsPageProps) {
   // fetch claim on mount
   const fetchClaimsData = async (showLoader = true) => {
     try {
-      setIsLoading(true);
+      if (showLoader) setIsLoading(true);
       const data = await claimsService.getClaims();
       setClaimantClaims(data.claims_as_claimant);
       setFounderClaims(data.claims_as_founder);
@@ -75,6 +76,39 @@ export function ClaimsPage({ user }: ClaimsPageProps) {
       console.error(`Failed to update status to ${newStatus}:`, err);
     }
   };
+
+  // Supabase realtime subscription for live chat updates
+  useEffect(() => {
+    if (!selectedId) return;
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseAnonKey) return;
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    const channel = supabase
+      .channel(`claim-chat-${selectedId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'claim_messages',
+          filter: `claim_id=eq.${selectedId}`,
+        },
+        () => {
+          // Silently fetch fresh claims data when a new message comes in via Realtime
+          fetchClaimsData(false);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedId]);
 
   // Handle Sending Message with Attachment
   const submitMessage = async () => {
