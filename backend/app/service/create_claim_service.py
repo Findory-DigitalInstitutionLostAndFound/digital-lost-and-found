@@ -26,9 +26,9 @@ class CreateClaimService:
             
             item = item_response.data[0]
 
-            # Prevent user claiming their own published item
-            #if item.get("user_id") == user_id:
-               # raise HTTPException(status_code=400, detail="You cannot claim your own item.")
+            #Prevent user claiming their own published item
+            if item.get("user_id") == user_id:
+               raise HTTPException(status_code=400, detail="You cannot claim your own item.")
 
             # prevent duplicate claims by the same user
             exsisting_claim = supabase.table("claims").select("id").eq("item_id", item_id).eq("claimant_user_id", user_id).eq("status", "pending").execute()
@@ -65,7 +65,8 @@ class CreateClaimService:
 
             return {
                 "status": "success",
-                "claim_id": new_claim.get("id")
+                "claim_id": new_claim.get("id"),
+                "message": "Claim created successfully. Verification questions are being generated in system. This may take a few minutes. Check your claims tab after few minutes to preceed with claim"
             }
         except HTTPException:
             raise
