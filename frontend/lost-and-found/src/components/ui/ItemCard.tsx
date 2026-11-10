@@ -30,7 +30,6 @@ export function ItemCard({ item, navigate }: ItemCardProps) {
       // Calling backend service to initialize the claim
       const result = await claimService.createClaim({ item_id: item.id.toString() })
       console.log('Claim created:', result)
-
       // Navigate over to the claims page
       navigate('claims', item.id)
     } catch (error) {
@@ -38,17 +37,16 @@ export function ItemCard({ item, navigate }: ItemCardProps) {
     }
   }
 
-
   return (
     <div
       onClick={() => navigate('detail', item.id)}
-      className="border-b border-[#C4BAA6] dark:border-[#2A2925] px-8 py-4 hover:bg-[#F2ECE1] dark:hover:bg-[#1A1916] transition-colors cursor-pointer flex flex-col md:grid gap-4 items-start md:items-center"
+      className="border-b border-[#0E0D0B]/10 px-8 py-4 bg-[#FAF6EC] hover:bg-[#0E0D0B]/5 transition-colors cursor-pointer flex flex-col md:grid gap-4 items-start md:items-center"
       style={{ gridTemplateColumns: '80px 1fr 140px 140px 90px 130px' }}
     >
       {/* 1. TYPE */}
       <div className="flex flex-col gap-1">
         <span
-          className={`mono text-[10px] px-2 py-0.5 uppercase tracking-wider font-bold w-fit ${
+          className={`font-mono text-[10px] px-2 py-0.5 uppercase tracking-wider font-bold w-fit ${
             item.type === 'lost'
               ? 'bg-[#D93B2B] text-[#FAF6EC]'
               : 'bg-[#06C167] text-[#0E0D0B]'
@@ -57,7 +55,7 @@ export function ItemCard({ item, navigate }: ItemCardProps) {
           {item.type}
         </span>
         {item.status === 'matched' && (
-          <span className="mono text-[9px] px-1.5 py-0.5 bg-[#7C3AED] text-[#FAF6EC] uppercase tracking-wider w-fit">
+          <span className="font-mono text-[9px] px-1.5 py-0.5 bg-[#7C3AED] text-[#FAF6EC] uppercase tracking-wider w-fit">
             Match
           </span>
         )}
@@ -69,14 +67,14 @@ export function ItemCard({ item, navigate }: ItemCardProps) {
           <img
             src={item.imageUrl}
             alt={item.title}
-            className="w-12 h-12 object-cover border border-[#C4BAA6] dark:border-[#2A2925] shrink-0"
+            className="w-12 h-12 object-cover border border-[#0E0D0B]/10 shrink-0"
           />
         )}
         <div className="min-w-0">
-          <h3 className="font-bold text-sm text-[#0E0D0B] dark:text-[#F0EAD6] truncate" style={{ fontFamily: 'Fraunces, serif' }}>
+          <h3 className="font-bold text-sm text-[#0E0D0B] truncate" style={{ fontFamily: 'Fraunces, serif' }}>
             {item.title}
           </h3>
-          <p className="text-xs text-[#524B43] dark:text-[#B8B0A4] line-clamp-1 mt-0.5">
+          <p className="text-xs text-[#0E0D0B]/70 line-clamp-1 mt-0.5">
             {item.description}
           </p>
         </div>
@@ -84,20 +82,20 @@ export function ItemCard({ item, navigate }: ItemCardProps) {
 
       {/* 3. CATEGORY & TAGS */}
       <div className="flex flex-col gap-1.5">
-        <span className="mono text-[10px] text-[#524B43] dark:text-[#B8B0A4] uppercase">
+        <span className="font-mono text-[10px] text-[#0E0D0B]/65 uppercase">
           [{item.category}]
         </span>
         <div className="flex flex-wrap gap-1">
           {item.tags.slice(0, 3).map((tag, idx) => (
             <span
               key={idx}
-              className="mono text-[9px] px-1.5 py-0.5 bg-[#F2ECE1] dark:bg-[#2A2925] border border-[#C4BAA6] dark:border-[#3A3832] uppercase text-[#0E0D0B] dark:text-[#F0EAD6]"
+              className="font-mono text-[9px] px-1.5 py-0.5 bg-[#0E0D0B] text-[#FAF6EC] uppercase"
             >
-              {tag}
+              #{tag}
             </span>
           ))}
           {item.tags.length > 3 && (
-            <span className="mono text-[9px] text-[#524B43] dark:text-[#B8B0A4] self-center">
+            <span className="font-mono text-[9px] text-[#0E0D0B]/65 self-center">
               +{item.tags.length - 3}
             </span>
           )}
@@ -105,19 +103,19 @@ export function ItemCard({ item, navigate }: ItemCardProps) {
       </div>
 
       {/* 4. LOCATION */}
-      <div className="mono text-xs text-[#524B43] dark:text-[#B8B0A4] truncate w-full">
+      <div className="font-mono text-xs text-[#0E0D0B]/65 truncate w-full">
         {item.location}
       </div>
 
       {/* 5. DATE */}
-      <div className="mono text-xs text-[#524B43] dark:text-[#B8B0A4] whitespace-nowrap">
+      <div className="font-mono text-xs text-[#0E0D0B]/65 whitespace-nowrap">
         {item.date}
       </div>
 
       {/* 6. ACTION BUTTON */}
       <div className="justify-self-end w-full md:w-auto" onClick={e => e.stopPropagation()}>
         {isMatched ? (
-          <div className="mono text-[9px] uppercase font-bold px-2 py-1.5 border border-[#0E0D0B]/20 text-[#0E0D0B]/50 dark:text-[#F0EAD6]/50 flex items-center gap-1 justify-center whitespace-nowrap bg-transparent">
+          <div className="font-mono text-[9px] uppercase font-bold px-2 py-1.5 border border-[#0E0D0B]/20 text-[#0E0D0B]/50 flex items-center gap-1 justify-center whitespace-nowrap bg-transparent">
             <ShieldCheck size={11} /> Claim Pending
           </div>
         ) : isLost ? (
@@ -125,7 +123,7 @@ export function ItemCard({ item, navigate }: ItemCardProps) {
             variant="outline" 
             size="sm"
             onClick={handleActionClick}
-            className="w-full md:w-auto font-mono text-[9px] uppercase tracking-wider py-1 px-2.5 whitespace-nowrap"
+            className="w-full md:w-auto font-mono text-[9px] uppercase tracking-wider py-1 px-2.5 whitespace-nowrap border-[#0E0D0B]/20 text-[#0E0D0B] hover:bg-[#0E0D0B] hover:text-[#FAF6EC]"
           >
             <ShieldCheck size={11} /> I Found This
           </Button>
@@ -134,7 +132,7 @@ export function ItemCard({ item, navigate }: ItemCardProps) {
             variant="outline" 
             size="sm"
             onClick={handleActionClick}
-            className="w-full md:w-auto font-mono text-[9px] uppercase tracking-wider py-1 px-2.5 whitespace-nowrap"
+            className="w-full md:w-auto font-mono text-[9px] uppercase tracking-wider py-1 px-2.5 whitespace-nowrap border-[#0E0D0B]/20 text-[#0E0D0B] hover:bg-[#0E0D0B] hover:text-[#FAF6EC]"
           >
             <ShieldCheck size={11} /> Claim
           </Button>
