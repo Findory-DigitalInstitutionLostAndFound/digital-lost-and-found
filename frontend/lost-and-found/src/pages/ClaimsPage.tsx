@@ -327,13 +327,45 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
       <div className="px-6 md:px-8 py-8 space-y-4 min-h-70">
         {claim.messages.map(entry => {
           const isMine = entry.sender_user_id === currentUserId;
+          // Detect the AI-generated verification questions message and format it
+          const isAiQuestions =
+            entry.content.startsWith('Verification questions generated for ownership check:');
+
+          let questions: string[] = [];
+          if (isAiQuestions) {
+            // Extract the numbered questions
+            const raw = entry.content
+              .replace('Verification questions generated for ownership check:', '')
+              .trim();
+
+            questions = raw
+              .split(/\d+\.\s+/)          // split as numbered list
+              .map(q => q.trim())
+              .filter(Boolean);
+          }
           return (
             <div key={entry.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-xl border p-4 ${isMine ? 'bg-[#0E0D0B] text-[#FAF6EC] border-[#0E0D0B]' : 'bg-white border-[#0E0D0B]/20 text-[#0E0D0B]'}`}>
                 <div className={`font-mono text-[9px] uppercase tracking-widest mb-2 ${isMine ? 'text-[#FAF6EC]/60' : 'text-[#0E0D0B]/60'}`}>
                   {isMine ? 'You' : 'User'} · {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
+                {/*Ai generated message special formatting*/}
+                {isAiQuestions ? (
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium leading-relaxed">
+                      Verification questions for ownership check:
+                    </p>
+                    <ol className="list-decimal list-inside space-y-2 text-sm leading-relaxed">
+                      {questions.map((q, idx) => (
+                        <li key={idx} className="pl-1">
+                          {q}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ) : (
                 <p className="text-sm leading-relaxed">{entry.content}</p>
+                )}
                 {entry.image_url && (
                   <div className="mt-2">
                     <img src={entry.image_url} alt="Attachement" className="max-w-full max-h-64 rounded border border-[#0E0D0B]/20 object-contain cursor-pointer" onClick={() => window.open(entry.image_url!, '_blank')} />
