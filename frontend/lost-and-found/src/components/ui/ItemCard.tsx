@@ -30,10 +30,15 @@ export function ItemCard({ item, navigate }: ItemCardProps) {
       // Calling backend service to initialize the claim
       const result = await claimService.createClaim({ item_id: item.id.toString() })
       console.log('Claim created:', result)
-      // Navigate over to the claims page
-      navigate('claims', item.id)
-    } catch (error) {
-      console.error('Failed to create claim:', error)
+      alert(result.message || 'Claim created successfully. Check the Claims tab.')
+    } catch (error: any) {
+        const message =
+        error?.response?.data?.detail ||
+        error?.message ||
+        'Failed to create claim. Please try again.'
+
+        console.error('Failed to create claim:', error)
+        alert(message)
     }
   }
 
