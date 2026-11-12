@@ -1,16 +1,44 @@
-import React, { useState } from 'react';
-import { PlusCircle, Search, Package } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { PlusCircle, Search, Package, Loader2 } from 'lucide-react';
+import { fetchItemsService } from '../services/fetchItemsService';
+import type { Item } from '../services/fetchItemsService';
 
 interface DashboardProps {
   navigate: (page: string) => void;
 }
 
 export function Dashboard({ navigate }: DashboardProps) {
-  // Mock items reported by the user for the dashboard view
-  const [userReports] = useState([
-    { id: 'item-1', title: 'Black Leather Wallet', type: 'lost', status: 'Active', date: '2026-09-15' },
-    { id: 'item-2', title: 'AirPods Pro (White)', type: 'lost', status: 'Active', date: '2026-09-17' },
-  ]);
+ const [userReports, setUserReports] = useState<Item[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadReports() {
+      try {
+        setLoading(true);
+        const items = await fetchItemsService.fetchMyItems();
+        if (isMounted) {
+          setUserReports(items);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError('Failed to load your reports. Please try again later.');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadReports();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <div className="flex-1 bg-[#FAF6EC] text-[#0E0D0B] min-h-screen">
@@ -68,7 +96,17 @@ export function Dashboard({ navigate }: DashboardProps) {
       {/* User's Active Reports Section */}
       <div className="px-8 py-6">
         <h2 className="text-xl font-bold mb-4" style={{ fontFamily: 'Fraunces, serif' }}>Your Active Reports</h2>
-        {userReports.length === 0 ? (
+        
+        {loading ? (
+          <div className="border border-dashed border-[#0E0D0B]/20 p-12 text-center flex flex-col items-center justify-center">
+            <Loader2 size={24} className="animate-spin text-[#0E0D0B]/65 mb-2" />
+            <p className="font-mono text-xs text-[#0E0D0B]/65 uppercase tracking-widest">Loading reports...</p>
+          </div>
+        ) : error ? (
+          <div className="border border-dashed border-[#D93B2B]/40 p-6 text-center bg-[#D93B2B]/5">
+            <p className="font-mono text-xs text-[#D93B2B] uppercase tracking-wider">{error}</p>
+          </div>
+        ) : userReports.length === 0 ? (
           <div className="border border-dashed border-[#0E0D0B]/20 p-12 text-center">
             <Package size={24} className="mx-auto text-[#0E0D0B]/40 mb-2" />
             <p className="font-mono text-xs text-[#0E0D0B]/65 uppercase tracking-widest">No active reports found.</p>
@@ -78,17 +116,19 @@ export function Dashboard({ navigate }: DashboardProps) {
             {userReports.map(report => (
               <div key={report.id} className="p-4 flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-3">
-                  <span className={`font-mono text-[10px] px-2 py-0.5 uppercase font-bold ${report.type === 'lost' ? 'bg-[#D93B2B] text-white' : 'bg-[#06C167] text-[#0E0D0B]'}`}>
-                    {report.type}
+                  <span className={`font-mono text-[10px] px-2 py-0.5 uppercase font-bold ${report.item_type === 'lost' ? 'bg-[#D93B2B] text-white' : 'bg-[#06C167] text-[#0E0D0B]'}`}>
+                    {report.item_type}
                   </span>
                   <div>
                     <h4 className="font-bold text-sm" style={{ fontFamily: 'Fraunces, serif' }}>{report.title}</h4>
-                    <span className="font-mono text-[10px] text-[#0E0D0B]/65">Reported on: {report.date}</span>
+                    <span className="font-mono text-[10px] text-[#0E0D0B]/65">
+                      Location: {report.location_name} | Reported on: {new Date(report.event_timestamp).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-[10px] bg-[#0E0D0B]/5 px-2.5 py-1 text-[#0E0D0B]">
-                    {report.status}
+                  <span className="font-mono text-[10px] bg-[#0E0D0B]/5 px-2.5 py-1 text-[#0E0D0B] uppercase">
+                    {report.category}
                   </span>
                   <button 
                     onClick={() => navigate('matches')}

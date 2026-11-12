@@ -1,4 +1,5 @@
 import {api} from "./api";
+import { authService } from "./authService";
 
 export type Item = {
     id: string;
@@ -18,5 +19,21 @@ export const fetchItemsService = {
     async fetchItems(): Promise<Item[]> {
         const response = await api.get<{ items: Item[] }>('/items');
         return response.data.items;
+    },
+
+    // Filters items to only return those created by the logged-in user
+    async fetchMyItems(): Promise<Item[]> {
+        const [itemsResponse, currentUser] = await Promise.all([
+            api.get<{ items: Item[] }>('/items'),
+            authService.getCurrentUser()
+        ]);
+
+        if (!currentUser?.user_id) {
+            return [];
+        }
+
+        return itemsResponse.data.items.filter(
+            (item) => item.user_id === currentUser.user_id
+        );
     }
 }
