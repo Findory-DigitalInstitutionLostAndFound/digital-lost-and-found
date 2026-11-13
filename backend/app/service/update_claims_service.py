@@ -150,4 +150,129 @@ class UpdateClaimsService:
         if not response.data:
             raise Exception("Failed to send message.")
 
-        return response.data[0]  
+        return response.data[0] 
+
+    # load claim and item details for meetup update
+    @staticmethod
+    def _load_claim_with_item(supabase, claim_id: str) -> tuple[dict, dict]:
+        claim_response = (
+            supabase.table("claims")
+            .select("*, items(user_id, is_high_valued)")
+            .eq("id", claim_id)
+            .execute()
+        )
+        if not claim_response.data:
+            raise HTTPException(status_code=404, detail="Claim not found.")
+
+        claim = claim_response.data[0]
+        item = claim.get("items") or {}
+        return claim, item
+
+    @staticmethod
+    async def update_meetup(
+        claim_id: str,
+        user_id: str,
+        meetup_location: str | None,
+        meetup_time: str,
+        access_token: str,
+    ):
+        supabase = get_user_supabase_client(access_token)
+        claim, item = UpdateClaimsService._load_claim_with_item(supabase, claim_id)
+
+        owner_id = item.get("user_id")
+        claimant_id = claim.get("claimant_user_id")
+        is_owner = user_id == owner_id
+        is_claimant = user_id == claimant_id
+
+        if not is_owner and not is_claimant:
+            raise HTTPException(status_code=403, detail="Not allowed on this claim.")
+
+        if claim.get("status") != "approved":
+            raise HTTPException(
+                status_code=400,
+                detail="Meetup can only be set after the claim is approved.",
+            )
+
+        # First proposal only by found person 
+        has_proposal = bool(claim.get("meetup_location") and claim.get("meetup_time"))
+        if not has_proposal and not is_owner:
+            raise HTTPException(
+                status_code=400,
+                detail="The found person must suggest the first meetup place and time.",
+            )
+
+        # If the item is high-value, the location is fixed to the campus service point
+        is_high_value = bool(item.get("is_high_valued"))
+        CAMPUS_POINT = "Campus service point"
+
+        if is_high_value:
+            location = CAMPUS_POINT
+        else:
+            location = (meetup_location or "").strip()
+            if not location:
+                raise HTTPException(status_code=400, detail="Meetup location is required.")
+
+        if not meetup_time or not str(meetup_time).strip():
+            raise HTTPException(status_code=400, detail="Meetup time is required.")
+
+        # Proposer accepts their own proposal; other side must accept again
+        update_data = {
+            "meetup_location": location,
+            "meetup_time": meetup_time,
+            "owner_accepted_meetup": is_owner,
+            "claimant_accepted_meetup": is_claimant,
+        }
+
+        result = (
+            supabase.table("claims")
+            .update(update_data)
+            .eq("id", claim_id)
+            .execute()
+        )
+        if not result.data:
+            raise HTTPException(status_code=500, detail="Failed to update meetup.")
+
+        return result.data[0]
+
+    # accept meetup proposal
+    @staticmethod
+    async def accept_meetup(claim_id: str, user_id: str, access_token: str):
+        supabase = get_user_supabase_client(access_token)
+        claim, item = UpdateClaimsService._load_claim_with_item(supabase, claim_id)
+
+        owner_id = item.get("user_id")
+        claimant_id = claim.get("claimant_user_id")
+        is_owner = user_id == owner_id
+        is_claimant = user_id == claimant_id
+
+        if not is_owner and not is_claimant:
+            raise HTTPException(status_code=403, detail="Not allowed on this claim.")
+
+        if claim.get("status") != "approved":
+            raise HTTPException(
+                status_code=400,
+                detail="Can only accept meetup when claim is approved.",
+            )
+
+        if not claim.get("meetup_location") or not claim.get("meetup_time"):
+            raise HTTPException(
+                status_code=400,
+                detail="No meetup proposal to accept yet.",
+            )
+
+        update_data = {}
+        if is_owner:
+            update_data["owner_accepted_meetup"] = True
+        if is_claimant:
+            update_data["claimant_accepted_meetup"] = True
+
+        result = (
+            supabase.table("claims")
+            .update(update_data)
+            .eq("id", claim_id)
+            .execute()
+        )
+        if not result.data:
+            raise HTTPException(status_code=500, detail="Failed to accept meetup.")
+
+        return result.data[0]
