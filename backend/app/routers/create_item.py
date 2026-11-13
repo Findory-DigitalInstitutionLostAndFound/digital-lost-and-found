@@ -3,7 +3,7 @@ from app.schemas.items_schema import ItemCreateSchema
 from app.service.sensitive_data_service import is_sensitive_text
 from app.service.gemini_upload_text_analysis import analyze_text_for_sensitive_data
 from typing import Optional
-from app.routers.auth import get_current_user
+from app.api.deps import get_current_user
 from app.service.create_items_service import CreateItemsService
 from app.service.image_redaction_service import redact_sensitive_areas
 import uuid
@@ -11,7 +11,7 @@ import uuid
 router = APIRouter()
 
 @router.post("/create-items")
-async def create_found_item(
+async def create_item(
     request: Request, 
     title: str = Form(...),
     description: str = Form(...),
@@ -63,7 +63,7 @@ async def create_found_item(
         raise HTTPException(status_code=400, detail="Description cannot be empty.")
 
     # Analyze the description for sensitive data using the Gemini client first
-    gemini_result = analyze_text_for_sensitive_data(description, gemini_client, openrouter_client)
+    gemini_result = analyze_text_for_sensitive_data(mode, description, gemini_client, openrouter_client)
     print("Gemini analysis result:", gemini_result)
 
     # Use the cleaned text that Gemini returned
@@ -90,15 +90,9 @@ async def create_found_item(
 
         # Create cleaned img
         reader = request.app.state.ocr_reader
-        analyzer = request.app.state.pii_analyzer
 
         # Determine if the category is related to jewellery or if the item is high value
         jewellery_categories = {"ring", "rings", "jewellery", "jewelry", "necklace", "bracelet", "watch", "earring"}
-
-        force_all = (
-            category.strip().lower() in jewellery_categories
-            or gemini_result.get("is_high_value", False)
-        )
 
         # Determine if the category is related to ID or identity documents
         id_categories = {"id", "identity", "passport", "license", "card", "henkilökortti"}

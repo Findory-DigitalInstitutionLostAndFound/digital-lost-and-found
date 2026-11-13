@@ -8,43 +8,6 @@ import {
 import { Button } from '../components/ui/Button'
 import { Navbar } from '../components/ui/Navbar'
 
-const MOCK_ITEMS = [
-  {
-    id: 1,
-    type: 'lost',
-    title: 'Black Leather Wallet',
-    tags: ['black', 'leather', 'small'],
-    location: 'Main Library, 2nd floor',
-  },
-  {
-    id: 2,
-    type: 'found',
-    title: 'Leather Wallet Found Near Library',
-    tags: ['black', 'leather', 'bifold'],
-    location: 'Main Library',
-  },
-  {
-    id: 3,
-    type: 'lost',
-    title: 'AirPods Pro (White)',
-    tags: ['white', 'small', 'electronics'],
-    location: 'Science Building, Room 204',
-  },
-  {
-    id: 4,
-    type: 'found',
-    title: 'Blue Water Bottle',
-    tags: ['blue', 'metal', 'bottle'],
-    location: 'Student Cafeteria',
-  },
-  {
-    id: 5,
-    type: 'lost',
-    title: 'Black Backpack',
-    tags: ['black', 'backpack', 'large'],
-    location: 'Engineering Building',
-  },
-]
 
 // Homepage component with navigation prop
 
@@ -53,23 +16,18 @@ type HomepageProps = {
 }
 
 export function Homepage({ navigate }: HomepageProps) {
-  const previewItems = MOCK_ITEMS.slice(0, 3)
-
+  
   return (
-    <div className="min-h-screen bg-[#0E0D0B] text-[#F0EAD6]">
+    <div className="min-h-screen bg-FAF6EC text-slate-900 dark:bg-white dark:text-slate-900]">
       {/* Navigation */}
       <Navbar navigate={navigate} />
 
 
       {/* HERO SECTION */}
+      <section className="bg-[#0E0D0B] text-[#F0EAD6]">
+        <div className="mx-auto max-w-7xl px-8 py-8 md:px-16 md:py-6">
 
-      <section className="grid min-h-170 lg:grid-cols-2">
-
-        {/* HERO LEFT*/}
-
-        <div className="flex flex-col justify-between border-r border-[#2A2925] p-8 md:p-12 lg:p-16">
-
-          <div>
+          <div className="mx-auto max-w-7xl px-8 py-12 md:px-16 md:py-10">
 
             {/* Institution label */}
 
@@ -111,7 +69,7 @@ export function Homepage({ navigate }: HomepageProps) {
 
           {/* Hero buttons */}
 
-          <div className="mt-12">
+          <div>
 
             <div className="flex flex-wrap gap-3">
 
@@ -147,359 +105,152 @@ export function Homepage({ navigate }: HomepageProps) {
           </div>
 
         </div>
+      </section>  
 
-
-        {/* RECENTLY REPORTED RIGHT SIDE */}
-
-        <div className="flex flex-col bg-[#F0EAD6] p-8 text-[#0E0D0B] md:p-12 lg:p-16">
-
-          {/* Section heading */}
-
-          <div className="mb-8 flex items-baseline justify-between">
-
-            <h2
-              className="text-base font-bold"
-              style={{
-                fontFamily: 'Fraunces, serif',
-              }}
+      {/* PROCESS / STATS STRIP */}
+      <section className="border-t border-black bg-white text-slate-900">
+        <div className="grid grid-cols-2 md:grid-cols-4">
+          
+          {/* Step 01: Right & Bottom border on mobile | Right border only on desktop */}
+          <div className="border-b border-r border-black p-8 md:border-b-0">
+            <span className="mono text-3xl text-[#D93B2B]">01</span>
+            <p
+              className="mt-3 text-lg font-bold"
+              style={{ fontFamily: 'Fraunces, serif' }}
             >
-              Recently reported
-            </h2>
-
-            <span className="mono text-[10px] uppercase tracking-widest text-[#6B6250]">
-              {MOCK_ITEMS.length} active items
-            </span>
-
+              Report
+            </p>
+            <p className="mt-2 text-sm text-[#000000]">
+              Tell us what was lost or found.
+            </p>
           </div>
 
-
-          {/*LEDGER*/}
-
-          <div className="border border-[#C4BAA6]">
-
-            {/* Ledger header */}
-
-            <div className="flex items-center gap-4 bg-[#0E0D0B] px-4 py-3">
-
-              <span className="mono w-16 shrink-0 text-[10px] uppercase tracking-widest text-[#ddd8d4]">
-                Type
-              </span>
-
-              <span className="mono flex-1 text-[10px] uppercase tracking-widest text-[#ddd8d4]">
-                Item
-              </span>
-
-              <span className="mono hidden w-36 text-[10px] uppercase tracking-widest text-[#ddd8d4] sm:block">
-                Location
-              </span>
-
-            </div>
-
-
-            {/* Ledger items */}
-
-            {previewItems.map((item) => {
-
-              const isLost = item.type === 'lost'
-
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => navigate('login')}
-                  className="flex cursor-pointer items-center gap-4 border-b border-[#C4BAA6] px-4 py-5 transition-colors last:border-0 hover:bg-[#E4DCCA]"
-                  style={{
-                    borderLeft: `4px solid ${
-                      isLost ? '#D93B2B' : '#06C167'
-                    }`,
-                  }}
-                >
-
-                  {/* LOST / FOUND badge */}
-
-                  <span
-                    className="stamp shrink-0 px-2 py-1 text-[10px]"
-                    style={{
-                      backgroundColor: isLost
-                        ? '#D93B2B'
-                        : '#06C167',
-
-                      color: isLost
-                        ? '#FAF6EC'
-                        : '#0E0D0B',
-                    }}
-                  >
-                    {item.type.toUpperCase()}
-                  </span>
-
-
-                  {/* Item information */}
-
-                  <div className="min-w-0 flex-1">
-
-                    <p
-                      className="truncate text-sm font-semibold"
-                      style={{
-                        fontFamily: 'Fraunces, serif',
-                      }}
-                    >
-                      {item.title}
-                    </p>
-
-                    <p className="mono mt-1 truncate text-[10px] text-[#6B6250]">
-                      {item.tags.slice(0, 3).join(' · ')}
-                    </p>
-
-                  </div>
-
-
-                  {/* Location */}
-
-                  <p className="mono hidden w-36 truncate text-[10px] text-[#6B6250] sm:block">
-                    {item.location}
-                  </p>
-
-                </div>
-              )
-            })}
-
+          {/* Step 02: Bottom border on mobile | Right border only on desktop */}
+          <div className="border-b border-black p-8 md:border-b-0 md:border-r">
+            <span className="mono text-3xl text-[#D93B2B]">02</span>
+            <p
+              className="mt-3 text-lg font-bold"
+              style={{ fontFamily: 'Fraunces, serif' }}
+            >
+              Match
+            </p>
+            <p className="mt-2 text-sm text-[#000000]">
+              Compare reports using item details.
+            </p>
           </div>
 
+          {/* Step 03: Right border on mobile & desktop */}
+          <div className="border-r border-black p-8">
+            <span className="mono text-3xl text-[#D93B2B]">03</span>
+            <p
+              className="mt-3 text-lg font-bold"
+              style={{ fontFamily: 'Fraunces, serif' }}
+            >
+              Verify
+            </p>
+            <p className="mt-2 text-sm text-[#000000]">
+              Check ownership before returning.
+            </p>
+          </div>
 
-          {/* View all */}
-
-          <button
-            onClick={() => navigate('browse')}
-            className="mono mt-5 flex items-center gap-2 self-end text-[10px] uppercase tracking-widest text-[#6B6250] transition-colors hover:text-[#D93B2B]"
-          >
-            View all items
-            <ArrowRight size={12} />
-          </button>
+          {/* Step 04 */}
+          <div className="p-8">
+            <span className="mono text-3xl text-[#D93B2B]">04</span>
+            <p
+              className="mt-3 text-lg font-bold"
+              style={{ fontFamily: 'Fraunces, serif' }}
+            >
+              Recover
+            </p>
+            <p className="mt-2 text-sm text-[#000000]">
+              Get your belongings back safely.
+            </p>
+          </div>
 
         </div>
-
       </section>
-
-
-      {/* PROCESS / STATS STRIP*/}
-
-      <section className="grid grid-cols-2 border-t border-[#2A2925] md:grid-cols-4">
-
-        <div className="border-r border-[#2A2925] px-8 py-8">
-
-          <span className="mono text-3xl text-[#D93B2B]">
-            01
-          </span>
-
-          <p
-            className="mt-3 text-lg font-bold"
-            style={{
-              fontFamily: 'Fraunces, serif',
-            }}
-          >
-            Report
-          </p>
-
-          <p className="mt-2 text-sm text-[#ddd8d4]">
-            Tell us what was lost or found.
-          </p>
-
-        </div>
-
-
-        <div className="border-r border-[#2A2925] px-8 py-8">
-
-          <span className="mono text-3xl text-[#D93B2B]">
-            02
-          </span>
-
-          <p
-            className="mt-3 text-lg font-bold"
-            style={{
-              fontFamily: 'Fraunces, serif',
-            }}
-          >
-            Match
-          </p>
-
-          <p className="mt-2 text-sm text-[#ddd8d4]">
-            Compare reports using item details.
-          </p>
-
-        </div>
-
-
-        <div className="border-r border-[#2A2925] px-8 py-8">
-
-          <span className="mono text-3xl text-[#D93B2B]">
-            03
-          </span>
-
-          <p
-            className="mt-3 text-lg font-bold"
-            style={{
-              fontFamily: 'Fraunces, serif',
-            }}
-          >
-            Verify
-          </p>
-
-          <p className="mt-2 text-sm text-[#ddd8d4]">
-            Check ownership before returning.
-          </p>
-
-        </div>
-
-
-        <div className="px-8 py-8">
-
-          <span className="mono text-3xl text-[#D93B2B]">
-            04
-          </span>
-
-          <p
-            className="mt-3 text-lg font-bold"
-            style={{
-              fontFamily: 'Fraunces, serif',
-            }}
-          >
-            Recover
-          </p>
-
-          <p className="mt-2 text-sm text-[#ddd8d4]">
-            Get your belongings back safely.
-          </p>
-
-        </div>
-
-      </section>
-
 
       {/* HOW IT WORKS */}
-
-      <section className="border-t border-[#2A2925]">
-
+      <section className="border-t border-black bg-white text-slate-900">
         {/* Heading */}
-
-        <div className="px-8 py-12 md:px-16">
-
+        <div className="bg-[#0E0D0B] px-8 py-12 md:px-16">
           <div className="mono mb-4 text-[10px] uppercase tracking-[0.2em] text-[#ddd8d4]">
             How it works
           </div>
-
           <h2
             className="max-w-xl text-4xl font-bold md:text-5xl"
-            style={{
-              fontFamily: 'Fraunces, serif',
-            }}
+            style={{ fontFamily: 'Fraunces, serif' }}
           >
-            From missing
+            <span className="text-[#D93B2B]">From missing</span>
             <br />
-            to found.
+            <span className="text-[#f8f5f4]">to found.</span>
           </h2>
-
         </div>
 
-
-        {/* Three steps */}
-
-        <div className="grid border-t border-[#2A2925] md:grid-cols-3">
-
+        {/* Three steps grid */}
+        <div className="grid border-t border-black bg-white divide-y divide-black md:grid-cols-3 md:divide-y-0 md:divide-x">
+          
           {/* Step 01 */}
-
-          <div className="border-r border-[#2A2925] p-8">
-
+          <div className="p-8">
             <ClipboardList
               size={30}
               strokeWidth={1.5}
               className="mb-6 text-[#D93B2B]"
             />
-
-            <div className="mono mb-4 text-sm text-[#ddd8d4]">
-              01
-            </div>
-
+            <div className="mono mb-4 text-sm text-[#000000]">01</div>
             <h3
               className="mb-3 text-xl font-bold"
-              style={{
-                fontFamily: 'Fraunces, serif',
-              }}
+              style={{ fontFamily: 'Fraunces, serif' }}
             >
               Report an item
             </h3>
-
-            <p className="text-sm leading-7 text-[#ddd8d4]">
-              Describe a lost or found item using useful
-              information such as category, color, location,
-              date and description.
+            <p className="text-sm leading-7 text-[#000000]">
+              Describe a lost or found item using useful information such as
+              category, color, location, date and description.
             </p>
-
           </div>
 
-
           {/* Step 02 */}
-
-          <div className="border-r border-[#2A2925] p-8">
-
+          <div className="p-8">
             <Search
               size={30}
               strokeWidth={1.5}
               className="mb-6 text-[#D93B2B]"
             />
-
-            <div className="mono mb-4 text-sm text-[#ddd8d4]">
-              02
-            </div>
-
+            <div className="mono mb-4 text-sm text-[#000000]">02</div>
             <h3
               className="mb-3 text-xl font-bold"
-              style={{
-                fontFamily: 'Fraunces, serif',
-              }}
+              style={{ fontFamily: 'Fraunces, serif' }}
             >
               Find a possible match
             </h3>
-
-            <p className="text-sm leading-7 text-[#ddd8d4]">
-              Lost and found reports can be compared using
-              information such as item type, category,
-              location and date.
+            <p className="text-sm leading-7 text-[#000000]">
+              Lost and found reports can be compared using information such as
+              item type, category, location and date.
             </p>
-
           </div>
 
-
           {/* Step 03 */}
-
           <div className="p-8">
-
             <ShieldCheck
               size={30}
               strokeWidth={1.5}
               className="mb-6 text-[#D93B2B]"
             />
-
-            <div className="mono mb-4 text-sm text-[#ddd8d4]">
-              03
-            </div>
-
+            <div className="mono mb-4 text-sm text-[#000000]">03</div>
             <h3
               className="mb-3 text-xl font-bold"
-              style={{
-                fontFamily: 'Fraunces, serif',
-              }}
+              style={{ fontFamily: 'Fraunces, serif' }}
             >
               Verify and recover
             </h3>
-
-            <p className="text-sm leading-7 text-[#ddd8d4]">
-              Relevant item details can be checked before
-              arranging a safe return through the institution.
+            <p className="text-sm leading-7 text-[#000000]">
+              Relevant item details can be checked before arranging a safe return
+              through the institution.
             </p>
-
           </div>
 
         </div>
-
       </section>
 
 
@@ -552,7 +303,7 @@ export function Homepage({ navigate }: HomepageProps) {
 
       {/* FOOTER */}
 
-      <footer className="flex flex-col justify-between gap-4 border-t border-[#2A2925] px-8 py-6 md:flex-row md:items-center">
+      <footer className="bg-[#0E0D0B] flex flex-col justify-between gap-4 border-t border-[#2A2925] px-8 py-6 md:flex-row md:items-center">
 
         <span className="mono text-[10px] uppercase tracking-widest text-[#ddd8d4]">
           © 2026 Findory · Educational Institution

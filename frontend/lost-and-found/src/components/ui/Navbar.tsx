@@ -20,17 +20,6 @@ export function Navbar({ navigate, activePage }: NavbarProps) {
       {/* Navigation */}
       <nav className="flex items-center gap-5">
         <button
-          onClick={() => navigate('browse')}
-          className={`mono text-xs uppercase tracking-[0.2em] transition-colors cursor-pointer ${
-            activePage === 'browse'
-              ? 'text-[#D93B2B] font-bold'
-              : 'text-[#524B43] dark:text-[#ddd8d4] hover:text-[#0E0D0B] dark:hover:text-[#FFFFFF]'
-          }`}
-        >
-          Browse
-        </button>
-
-        <button
           onClick={() => navigate('guest')}
           className={`mono text-xs uppercase tracking-[0.2em] transition-colors cursor-pointer ${
             activePage === 'guest'
