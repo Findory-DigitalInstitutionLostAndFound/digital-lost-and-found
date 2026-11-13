@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, ShieldCheck, X } from 'lucide-react'
+import { AlertCircle, CheckCircle2, ShieldCheck, User, X } from 'lucide-react'
 import { Button } from './Button'
 import { claimService } from '../../services/claimService'
 import { useState } from 'react'
@@ -14,16 +14,20 @@ export type Item = {
   category: string
   status: 'active' | 'matched' | 'resolved'
   imageUrl?: string
+  user_id?: string | null
 }
 
 type ItemCardProps = {
   item: Item
   navigate: (page: string, itemId?: number) => void
+  currentUserId?: string | null
 }
 
-export function ItemCard({ item, navigate }: ItemCardProps) {
-  const isLost = item.type === 'lost'
+export function ItemCard({ item, navigate, currentUserId }: ItemCardProps) {
   const isMatched = item.status === 'matched'
+
+  // Check if the item belongs to the currently logged in user
+  const isUserItem = currentUserId ? item.user_id === currentUserId : false
 
   // Modal State for custom UI notifications
   const [modalState, setModalState] = useState<{
@@ -66,11 +70,7 @@ export function ItemCard({ item, navigate }: ItemCardProps) {
   }
   
   const handleModalClose = () => {
-    const isSuccess = modalState.type === 'success'
     setModalState(prev => ({ ...prev, isOpen: false }))
-    if (isSuccess) {
-      navigate('claims', item.id)
-    }
   }
 
   return (
@@ -151,12 +151,17 @@ export function ItemCard({ item, navigate }: ItemCardProps) {
 
       {/* 6. ACTION BUTTON */}
       <div className="justify-self-end w-full md:w-auto" onClick={e => e.stopPropagation()}>
-          {isMatched ? (
+          {isUserItem ? (
+            /* User's own posted item indicator */
+            <div className="font-mono text-[9px] uppercase font-bold px-2.5 py-1.5 border border-[#0E0D0B]/20 text-[#0E0D0B]/70 flex items-center gap-1 justify-center whitespace-nowrap bg-white">
+              <User size={11} /> Your Item
+            </div>
+          ) : isMatched ? (
             <div className="font-mono text-[9px] uppercase font-bold px-2.5 py-1.5 border border-[#0E0D0B]/20 text-[#0E0D0B]/50 flex items-center gap-1 justify-center whitespace-nowrap bg-transparent">
               <ShieldCheck size={11} /> Claim Pending
             </div>
-          ) : isLost ? (
-            /* LOST items show the active CLAIM button */
+          ) : (
+            /* Active items show the CLAIM button */
             <Button 
               variant="outline" 
               size="sm"
@@ -165,11 +170,6 @@ export function ItemCard({ item, navigate }: ItemCardProps) {
             >
               <ShieldCheck size={11} /> Claim
             </Button>
-          ) : (
-            /* FOUND items show the status indicator badge instead of a button */
-            <div className="font-mono text-[9px] uppercase font-bold px-2 py-1.5 border border-[#0E0D0B]/20 text-[#0E0D0B]/60 flex items-center gap-1 justify-center whitespace-nowrap bg-transparent cursor-default">
-              <ShieldCheck size={11} /> User Found
-            </div>
           )}
         </div>
     </div>
@@ -208,7 +208,7 @@ export function ItemCard({ item, navigate }: ItemCardProps) {
                 onClick={handleModalClose}
                 className="font-mono text-[10px] uppercase tracking-widest px-4 py-1.5"
               >
-                Proceed
+                {modalState.type === 'success' ? 'Got It' : 'Close'}
               </Button>
             </div>
           </div>

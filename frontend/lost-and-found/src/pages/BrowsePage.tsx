@@ -3,6 +3,7 @@ import { Search, X } from 'lucide-react'
 import { ItemCard } from '../components/ui/ItemCard'
 import type { Item } from '../components/ui/ItemCard'
 import { api } from '../services/api'
+import { authService } from '../services/authService'
 
 const CATEGORIES = ['Accessories', 'Electronics', 'Documents', 'Clothing', 'Keys', 'Bags', 'Jewellery', 'ID', 'Other']
 
@@ -16,12 +17,16 @@ export function BrowsePage({ navigate }: BrowsePageProps) {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [items, setItems] = useState<Item[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchBackendItems() {
       try {
-        const response = await api.get('/items')
-        const formattedItems = response.data.items.map((i: any) => ({
+        const [itemsResponse, currentUser] = await Promise.all([
+          api.get('/items'),
+          authService.getCurrentUser()
+        ])
+        const formattedItems = itemsResponse.data.items.map((i: any) => ({
           id: i.id,
           type: i.item_type,
           title: i.title,
@@ -31,9 +36,11 @@ export function BrowsePage({ navigate }: BrowsePageProps) {
           date: i.event_timestamp ? i.event_timestamp.split('T')[0] : '2026-09-18',
           category: i.category || 'Other',
           status: 'active',
-          imageUrl: i.blurred_image_url
+          imageUrl: i.blurred_image_url,
+          user_id: i.user_id
         }))
         setItems(formattedItems)
+        setCurrentUserId(currentUser.user_id)
       } catch (err) {
         console.error('Failed to load items from backend:', err)
       } finally {
@@ -180,7 +187,7 @@ export function BrowsePage({ navigate }: BrowsePageProps) {
       ) : (
         <div className="flex-1">
           {filtered.map(item => (
-            <ItemCard key={item.id} item={item} navigate={navigate} />
+            <ItemCard key={item.id} item={item} navigate={navigate} currentUserId={currentUserId} />
           ))}
         </div>
       )}
