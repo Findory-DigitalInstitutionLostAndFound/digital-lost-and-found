@@ -455,111 +455,113 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
             </div>
           );
         })}
+
+        {/* MEETUP FORM (only after approve)*/}
+        {isApproved && (
+          <div className="mt-6 border border-[#0E0D0B]/20 bg-white p-4 space-y-3 max-w-xl">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[#0E0D0B]/60">
+                Arrange meetup
+            </p>
+
+            {bothAccepted ? (
+              <p className="text-sm text-[#06C167] font-medium">
+                Meetup agreed: {claim.meetup_location} ·{' '}
+                {claim.meetup_time
+                  ? new Date(claim.meetup_time).toLocaleString()
+                  : ''}
+              </p>
+            ) : (
+              <>
+                {/*place */}
+                <div>
+                  <label className= "font-mono text-[10px] uppercase block mb-1">
+                    Place
+                  </label>
+                  <input
+                    value={isHighValue ? 'Campus service point' : meetupLocation}
+                    onChange={e => setMeetupLocation(e.target.value)}
+                    disabled={isHighValue || (!canProposeFirst && !canCounter)}
+                    placeholder="e.g. Library lobby, Room 101"
+                    className="w-full h-10 px-3 text-sm border border-[#0E0D0B]/20 bg-white disabled:bg-[#0E0D0B]/5"
+                  />
+                  {isHighValue && (
+                    <p className="mt-1 font-mono text-[10px] text-[#D93B2B]">
+                        High-value item: campus service point only.
+                      </p>
+                  )}
+                </div>
+
+                {/* Time */}
+                <div>
+                  <label className="font-mono text-[10px] uppercase block mb-1">
+                    Date & time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={meetupTime}
+                    onChange={e => setMeetupTime(e.target.value)}
+                    disabled={!canProposeFirst && !canCounter}
+                    className="w-full h-10 px-3 text-sm border border-[#0E0D0B]/20 bg-white disabled:bg-[#0E0D0B]/5"
+                  />
+                </div>
+
+                {/* Current proposal summary */}
+                {hasProposal && (
+                  <p className="text-xs text-[#0E0D0B]/70">
+                    Current proposal: <strong>{claim.meetup_location}</strong> at{' '}
+                    <strong>
+                      {claim.meetup_time
+                        ? new Date(claim.meetup_time).toLocaleString()
+                        : '—'}
+                    </strong>
+                  </p>
+                )}
+                {/* Who accepted */}
+                <p className="font-mono text-[10px] text-[#0E0D0B]/60">
+                  Found person:{' '}
+                  {claim.owner_accepted_meetup ? 'accepted' : 'waiting'} ·
+                  Claimant:{' '}
+                  {claim.claimant_accepted_meetup ? 'accepted' : 'waiting'}
+                </p>
+
+                {/* Buttons */}
+                <div className="flex flex-wrap gap-2">
+                  {/* First suggestion – only found person */}
+                  {canProposeFirst && (
+                    <Button onClick={saveProposal}>Suggest meetup</Button>
+                  )}
+
+                  {/* Counter – either side when not yet fully agreed */}
+                  {canCounter && (
+                    <Button onClick={saveProposal}>Suggest different</Button>
+                  )}
+
+                  {/* Accept current proposal */}
+                  {canAccept && (
+                    <Button variant="found" onClick={acceptProposal}>
+                      <Check size={14} /> Accept this meetup
+                    </Button>
+                  )}
+
+                  {/* Waiting states */}
+                  {!hasProposal && !isFoundPerson && (
+                    <p className="text-xs text-[#0E0D0B]/60">
+                      Waiting for the found person to suggest place and time.
+                    </p>
+                  )}
+                  {hasProposal && iAlreadyAccepted && !bothAccepted && (
+                    <p className="text-xs text-[#0E0D0B]/60">
+                      Waiting for the other person to accept.
+                    </p>
+                    )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* MEETUP FORM (only after approve)*/}
-      {isApproved && (
-        <div className="mt-6 border border-[#0E0D0B]/20 bg-white p-4 space-y-3 max-w-xl">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-[#0E0D0B]/60">
-              Arrange meetup
-          </p>
-
-          {bothAccepted ? (
-            <p className="text-sm text-[#06C167] font-medium">
-              Meetup agreed: {claim.meetup_location} ·{' '}
-              {claim.meetup_time
-                ? new Date(claim.meetup_time).toLocaleString()
-                : ''}
-            </p>
-          ) : (
-            <>
-              {/*place */}
-              <div>
-                <label className= "font-mono text-[10px] uppercase block mb-1">
-                  Place
-                </label>
-                <input
-                  value={isHighValue ? 'Campus service point' : meetupLocation}
-                  onChange={e => setMeetupLocation(e.target.value)}
-                  disabled={isHighValue || (!canProposeFirst && !canCounter)}
-                  placeholder="e.g. Library lobby, Room 101"
-                  className="w-full h-10 px-3 text-sm border border-[#0E0D0B]/20 bg-white disabled:bg-[#0E0D0B]/5"
-                />
-                {isHighValue && (
-                  <p className="mt-1 font-mono text-[10px] text-[#D93B2B]">
-                      High-value item: campus service point only.
-                    </p>
-                )}
-              </div>
-
-              {/* Time */}
-              <div>
-                <label className="font-mono text-[10px] uppercase block mb-1">
-                  Date & time
-                </label>
-                <input
-                  type="datetime-local"
-                  value={meetupTime}
-                  onChange={e => setMeetupTime(e.target.value)}
-                  disabled={!canProposeFirst && !canCounter}
-                  className="w-full h-10 px-3 text-sm border border-[#0E0D0B]/20 bg-white disabled:bg-[#0E0D0B]/5"
-                />
-              </div>
-
-              {/* Current proposal summary */}
-              {hasProposal && (
-                <p className="text-xs text-[#0E0D0B]/70">
-                  Current proposal: <strong>{claim.meetup_location}</strong> at{' '}
-                  <strong>
-                    {claim.meetup_time
-                      ? new Date(claim.meetup_time).toLocaleString()
-                      : '—'}
-                  </strong>
-                </p>
-              )}
-              {/* Who accepted */}
-              <p className="font-mono text-[10px] text-[#0E0D0B]/60">
-                Found person:{' '}
-                {claim.owner_accepted_meetup ? 'accepted' : 'waiting'} ·
-                Claimant:{' '}
-                {claim.claimant_accepted_meetup ? 'accepted' : 'waiting'}
-              </p>
-
-              {/* Buttons */}
-              <div className="flex flex-wrap gap-2">
-                {/* First suggestion – only found person */}
-                {canProposeFirst && (
-                  <Button onClick={saveProposal}>Suggest meetup</Button>
-                )}
-
-                {/* Counter – either side when not yet fully agreed */}
-                {canCounter && (
-                  <Button onClick={saveProposal}>Suggest different</Button>
-                )}
-
-                {/* Accept current proposal */}
-                {canAccept && (
-                  <Button variant="found" onClick={acceptProposal}>
-                    <Check size={14} /> Accept this meetup
-                  </Button>
-                )}
-
-                {/* Waiting states */}
-                {!hasProposal && !isFoundPerson && (
-                  <p className="text-xs text-[#0E0D0B]/60">
-                    Waiting for the found person to suggest place and time.
-                  </p>
-                )}
-                {hasProposal && iAlreadyAccepted && !bothAccepted && (
-                  <p className="text-xs text-[#0E0D0B]/60">
-                    Waiting for the other person to accept.
-                  </p>
-                  )}
-              </div>
-            </>
-          )}
-        </div>
-      )}
+      
 
       <div className="border-t border-[#0E0D0B]/10 bg-[#FAF6EC] p-5 md:px-8">
         {isPending && tab !== 'archived' ? (
