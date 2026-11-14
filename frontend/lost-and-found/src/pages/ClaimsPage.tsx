@@ -351,8 +351,20 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
     ? Boolean(claim.owner_accepted_meetup)
     : Boolean(claim.claimant_accepted_meetup);
   const canAccept = hasProposal && !bothAccepted && !iAlreadyAccepted;
+  
+  // Detect if the form values have changed from the current proposal
+  const savedTimeLocal = claim.meetup_time ? claim.meetup_time.slice(0, 16) : '';
+  const savedLocation = claim.meetup_location ?? '';
+
+  const proposalChanged = isHighValue
+    ? meetupTime !== savedTimeLocal
+    : meetupLocation.trim() !== savedLocation.trim() || meetupTime !== savedTimeLocal;
 
   const saveProposal = async () => {
+    if (hasProposal && !proposalChanged) {
+      alert('Change the place or time before sending a new proposal.');
+      return;
+    }
     const location = isHighValue
       ? 'Campus service point'
       : meetupLocation.trim();
@@ -366,7 +378,7 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
       await claimsService.updateMeetupDetails({
         claimId: claim.id,
         location: location,
-        time: new Date(meetupTime).toISOString(),
+        time: meetupTime
       });
       onRefresh();
     } catch (err) {
@@ -511,7 +523,7 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
                     Current proposal: <strong>{claim.meetup_location}</strong> at{' '}
                     <strong>
                       {claim.meetup_time
-                        ? new Date(claim.meetup_time).toLocaleString()
+                        ? claim.meetup_time.slice(0, 16).replace('T', ' ')
                         : '—'}
                     </strong>
                   </p>
@@ -533,7 +545,7 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
 
                   {/* Counter – either side when not yet fully agreed */}
                   {canCounter && (
-                    <Button onClick={saveProposal}>Suggest different</Button>
+                    <Button onClick={saveProposal} disabled={!proposalChanged}> Suggest different </Button>
                   )}
 
                   {/* Accept current proposal */}
