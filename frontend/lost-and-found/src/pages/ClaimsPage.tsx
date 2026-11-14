@@ -164,7 +164,13 @@ export function ClaimsPage({ user }: ClaimsPageProps) {
           </span>
         </div>
 
-        {visibleClaims.length === 0 ? (
+        {isLoading ? (
+          <div className="px-8 py-20 text-center border-b border-[#0E0D0B]/10">
+            <p className="font-mono text-xs text-[#0E0D0B]/60 uppercase tracking-widest">
+              Loading claims…
+            </p>
+          </div>
+        ) : visibleClaims.length === 0 ? (
           <div className="px-8 py-20 text-center border-b border-[#0E0D0B]/10">
             <MessageSquare size={28} className="mx-auto text-[#0E0D0B]/30 mb-4" />
             <p className="font-mono text-xs text-[#0E0D0B]/60 uppercase tracking-widest">
