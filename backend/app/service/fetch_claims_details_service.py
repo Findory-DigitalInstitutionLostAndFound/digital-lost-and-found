@@ -9,7 +9,7 @@ class FetchClaimsDetailsService:
             
             # join items table and claim_messages table and het all claims
             claims_response = (supabase.table("claims")
-                .select("*, item:items(title, item_type, public_description, blurred_image_url), messages:claim_messages(*)")
+                .select("*, item:items(title, item_type, public_description, blurred_image_url, is_high_valued), messages:claim_messages(*)")
                 .eq("claimant_user_id", user_id)
                 .order("created_at", desc=True)
                 .execute()
@@ -50,7 +50,7 @@ class FetchClaimsDetailsService:
             # then get claims and messages for those items
             claims_response = (
                 supabase.table("claims")
-                .select("*, item:items(title, item_type, public_description, blurred_image_url), messages:claim_messages(*)")
+                .select("*, item:items(title, item_type, public_description, blurred_image_url, is_high_valued), messages:claim_messages(*)")
                 .in_("item_id", found_item_ids)
                 .order("created_at", desc=True)
                 .execute()
