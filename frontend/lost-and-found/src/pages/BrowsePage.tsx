@@ -33,7 +33,7 @@ export function BrowsePage({ navigate }: BrowsePageProps) {
           description: i.public_description,
           tags: i.ai_tags || [],
           location: i.location_name,
-          date: i.event_timestamp ? i.event_timestamp.split('T')[0] : '2026-09-18',
+          date: i.event_timestamp ? i.event_timestamp.split('T')[0] : '',
           category: i.category || 'Other',
           status: 'active',
           imageUrl: i.blurred_image_url,

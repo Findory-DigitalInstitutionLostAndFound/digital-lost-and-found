@@ -9,9 +9,10 @@ type ClaimTab = 'mine' | 'incoming' | 'archived';
 interface ClaimsPageProps {
   navigate: (page: string) => void;
   user?: { name: string; email: string; phone: string; user_id: string } | null;
+  refreshCounts?: () => void;
 }
 
-export function ClaimsPage({ user }: ClaimsPageProps) {
+export function ClaimsPage({ user, refreshCounts }: ClaimsPageProps) {
   const currentUserId = user?.user_id ?? 'user-current';
  
   const [claimantClaims, setClaimantClaims] = useState<ClaimDetail[]>([]);
@@ -191,7 +192,8 @@ export function ClaimsPage({ user }: ClaimsPageProps) {
                     setMessage('');
                     if (claim.is_unread) {
                       claimsService.markClaimAsRead(claim.id);
-                      claim.is_unread = false; // Update the local state 
+                      claim.is_unread = false; 
+                      refreshCounts?.(); // Immediately updates the global header/sidebar counter!
                     }
                   }}
                     className={`w-full text-left grid md:grid-cols-[minmax(0,1.5fr)_minmax(10rem,0.65fr)_minmax(11rem,0.7fr)_2rem] gap-4 md:gap-5 items-center px-6 md:px-8 py-4 border-b border-[#0E0D0B]/10 transition-colors ${
