@@ -22,7 +22,7 @@ interface SidebarProps {
 export function Sidebar({
   currentPage = 'dashboard',
   navigate,
-  user = { name: 'Alex Rivera', email: 'alex.rivera@university.edu' },
+  user = null,
   logout = () => alert('Signed out successfully'),
   pendingMatchesCount = 1,
   pendingClaimsCount = 1,
