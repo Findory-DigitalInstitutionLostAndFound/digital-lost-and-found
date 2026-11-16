@@ -150,6 +150,12 @@ class UpdateClaimsService:
         if not response.data:
             raise Exception("Failed to send message.")
 
+        await UpdateClaimsService.update_last_read_time(
+            claim_id=claim_id,
+            user_id=user_id,
+            access_token=access_token,
+        )
+
         return response.data[0] 
 
     # load claim and item details for meetup update
