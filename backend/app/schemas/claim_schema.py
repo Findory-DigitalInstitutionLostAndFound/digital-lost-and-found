@@ -11,3 +11,6 @@ class CreateClaimSchema(BaseModel):
 class MeetupUpdateSchema(BaseModel):
     location: str
     time: str
+
+class QRVerifyRequest(BaseModel):
+    qr_payload: str
