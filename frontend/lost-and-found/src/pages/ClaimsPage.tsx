@@ -3,6 +3,9 @@ import { Check, ChevronDown, ChevronUp, Image, MessageSquare, Send, ShieldAlert,
 import { Button } from '../components/ui/Button';
 import { claimsService, type ClaimDetail } from '../services/claimMessageService';
 import { createClient } from '@supabase/supabase-js/dist/index.cjs';
+import { QRCodeSVG } from 'qrcode.react';
+import { QrScanner } from './QrScanner';
+import { handOverService } from '../services/handOverService';
 
 type ClaimTab = 'mine' | 'incoming' | 'archived';
 
@@ -337,6 +340,14 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
   const [isSavingMeetup, setIsSavingMeetup] = useState(false);
   const [isAcceptingMeetup, setIsAcceptingMeetup] = useState(false);
 
+  const [qrPayload, setQrPayload] = useState<string | null>(null);
+  const [qrExpiresAt, setQrExpiresAt] = useState<string | null>(null);
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
+  
+  const [scanInput, setScanInput] = useState('');
+  const [isVerifyingQr, setIsVerifyingQr] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+
   // Keep form in sync when claim data refreshes
   useEffect(() => {
     setMeetupLocation(
@@ -409,6 +420,43 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
       alert('Could not accept meetup.');
     } finally {
       setIsAcceptingMeetup(false);
+    }
+  };
+
+  // function to generate QR code for handover
+  const handleGenerateQr = async () => {
+    try {
+      setIsGeneratingQr(true);
+      const data = await handOverService.generateQr(claim.id);
+      setQrPayload(data.qr_payload);
+      setQrExpiresAt(data.expires_at);
+    } catch (err) {
+      console.error(err);
+      alert('Could not generate QR code.');
+    } finally {
+      setIsGeneratingQr(false);
+    }
+  };
+
+  // function to verify QR code and complete handover
+  const handleVerifyQr = async () => {
+    const value = scanInput.trim();
+    if (!value) {
+      alert('Scan or paste the QR code first.');
+      return;
+    }
+    try {
+      setIsVerifyingQr(true);
+      await handOverService.verifyQr(claim.id, value);
+      alert('Handover completed successfully.');
+      setShowScanner(false);
+      setScanInput('');
+      onRefresh();
+    } catch (err) {
+      console.error(err);
+      alert('QR verification failed. Check the code has not expired.');
+    } finally {
+      setIsVerifyingQr(false);
     }
   };
 
@@ -505,11 +553,98 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
                   </p>
                 )}
 
-                <p className="text-xs text-[#0E0D0B]/70">
-                  {isFoundPerson
-                    ? "Scan the claimant's QR code to hand over the item. Do not release it until the app confirms the transfer."
-                    : 'Generate a QR code when you meet so the found person can verify you in the app.'}
-                </p>
+                {/* ========== CLAIMANT: generate QR ========== */}
+                {!isFoundPerson && (
+                  <div className="space-y-2 border border-[#0E0D0B]/15 p-3">
+                    <p className="font-mono text-[10px] uppercase tracking-widest text-[#0E0D0B]/60">
+                      Handover QR
+                    </p>
+                    <p className="text-xs text-[#0E0D0B]/70">
+                      Generate a QR when you meet. It expires quickly — refresh if needed.
+                    </p>
+
+                    <Button onClick={handleGenerateQr} disabled={isGeneratingQr}>
+                      {isGeneratingQr
+                        ? 'Generating…'
+                        : qrPayload
+                          ? 'Refresh QR'
+                          : 'Generate QR'}
+                    </Button>
+
+                    {isGeneratingQr && (
+                      <p className="text-xs text-[#0E0D0B]/50">Creating secure token…</p>
+                    )}
+
+                    {qrPayload && !isGeneratingQr && (
+                      <div className="flex flex-col items-start gap-2 pt-2">
+                        <QRCodeSVG value={qrPayload} size={180} />
+                        <p className="font-mono text-[10px] text-[#0E0D0B]/60">
+                          Valid until{' '}
+                          {qrExpiresAt
+                            ? new Date(qrExpiresAt).toLocaleString('fi-FI', {
+                                timeZone: 'Europe/Helsinki',
+                              })
+                            : '—'}
+                        </p>
+                        <p className="text-[10px] text-[#0E0D0B]/50 break-all max-w-xs">
+                          {qrPayload}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ========== FOUND PERSON: scan or paste ========== */}
+                {isFoundPerson && (
+                  <div className="space-y-2 border border-[#0E0D0B]/15 p-3">
+                    <p className="font-mono text-[10px] uppercase tracking-widest text-[#0E0D0B]/60">
+                      Verify claimant
+                    </p>
+                    <p className="text-xs text-[#0E0D0B]/70">
+                      Scan the claimant&apos;s QR or paste the code. Do not hand over the
+                      item until verification succeeds.
+                    </p>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => setShowScanner(s => !s)}
+                        disabled={isVerifyingQr}
+                      >
+                        {showScanner ? 'Hide camera' : 'Open camera scanner'}
+                      </Button>
+                    </div>
+
+                    {showScanner && (
+                      <QrScanner
+                        onScan={(text) => {
+                          setScanInput(text);
+                          setShowScanner(false);
+                        }}
+                        onError={(msg) => {
+                          console.error(msg);
+                          alert('Camera unavailable. Paste the QR text instead.');
+                          setShowScanner(false);
+                        }}
+                      />
+                    )}
+
+                    <input
+                      value={scanInput}
+                      onChange={e => setScanInput(e.target.value)}
+                      placeholder="Paste QR value (findory:handover:...)"
+                      className="w-full h-10 px-3 text-sm border border-[#0E0D0B]/20 bg-white"
+                    />
+
+                    <Button
+                      variant="found"
+                      onClick={handleVerifyQr}
+                      disabled={isVerifyingQr || !scanInput.trim()}
+                    >
+                      {isVerifyingQr ? 'Verifying…' : 'Verify QR & complete handover'}
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <>
