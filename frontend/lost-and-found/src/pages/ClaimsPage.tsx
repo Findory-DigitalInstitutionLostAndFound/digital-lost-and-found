@@ -23,6 +23,7 @@ export function ClaimsPage({ user, refreshCounts }: ClaimsPageProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   // fetch claim on mount
   const fetchClaimsData = async (showLoader = true) => {
@@ -70,12 +71,16 @@ export function ClaimsPage({ user, refreshCounts }: ClaimsPageProps) {
 
   const handleStatusChange = async (claimId: string, newStatus: string) => {
     try {
+      setIsUpdatingStatus(true);
+      console.log('updating satus');
       // Call backend API to update status
       await claimsService.updateClaimStatus(claimId, newStatus);
       // Refresh claims list
       await fetchClaimsData();
     } catch (err) {
       console.error(`Failed to update status to ${newStatus}:`, err);
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -257,6 +262,7 @@ export function ClaimsPage({ user, refreshCounts }: ClaimsPageProps) {
           onSend={submitMessage}
           onStatusChange={status => handleStatusChange(selectedClaim.id, status)}
           onRefresh={() => fetchClaimsData(false)} 
+          isUpdatingStatus={isUpdatingStatus}
         />
       )}
     </div>
@@ -301,7 +307,7 @@ function ClaimStatus({ status }: { status: string }) {
   );
 }
 
-function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange, imageFile, onImageChange, onSend, onStatusChange, onRefresh }: {
+function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange, imageFile, onImageChange, onSend, onStatusChange, onRefresh, isUpdatingStatus }: {
   claim: ClaimDetail;
   currentUserId: string;
   tab: ClaimTab;
@@ -312,6 +318,7 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
   onSend: () => void;
   onStatusChange: (status: 'approved' | 'rejected' | 'cancelled') => void;
   onRefresh: () => void;
+  isUpdatingStatus: boolean;
 }) {
   const isPending = claim.status === 'pending';
   const isApproved = claim.status === 'approved';
@@ -327,6 +334,8 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
   const [meetupTime, setMeetupTime] = useState(
     claim.meetup_time ? claim.meetup_time.slice(0, 16) : ''
   );
+  const [isSavingMeetup, setIsSavingMeetup] = useState(false);
+  const [isAcceptingMeetup, setIsAcceptingMeetup] = useState(false);
 
   // Keep form in sync when claim data refreshes
   useEffect(() => {
@@ -375,6 +384,7 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
     }
 
     try {
+      setIsSavingMeetup(true);
       await claimsService.updateMeetupDetails({
         claimId: claim.id,
         location: location,
@@ -384,16 +394,21 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
     } catch (err) {
       console.error(err);
       alert('Could not save meetup proposal.');
+    } finally {
+      setIsSavingMeetup(false);
     }
   };
 
   const acceptProposal = async () => {
     try {
+      setIsAcceptingMeetup(true);
       await claimsService.acceptMeetup(claim.id);
       onRefresh();
     } catch (err) {
       console.error(err);
       alert('Could not accept meetup.');
+    } finally {
+      setIsAcceptingMeetup(false);
     }
   };
 
@@ -540,18 +555,18 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
                 <div className="flex flex-wrap gap-2">
                   {/* First suggestion – only found person */}
                   {canProposeFirst && (
-                    <Button onClick={saveProposal}>Suggest meetup</Button>
+                    <Button onClick={saveProposal} disabled={isSavingMeetup}> {isSavingMeetup ? 'Suggesting...' : 'Suggest meetup'}</Button>
                   )}
 
                   {/* Counter – either side when not yet fully agreed */}
                   {canCounter && (
-                    <Button onClick={saveProposal} disabled={!proposalChanged}> Suggest different </Button>
+                    <Button onClick={saveProposal} disabled={!proposalChanged || isSavingMeetup}> {isSavingMeetup ? 'Suggesting...' : 'Suggest different '}</Button>
                   )}
 
                   {/* Accept current proposal */}
                   {canAccept && (
-                    <Button variant="found" onClick={acceptProposal}>
-                      <Check size={14} /> Accept this meetup
+                    <Button variant="found" onClick={acceptProposal} disabled={isAcceptingMeetup || isSavingMeetup}>
+                      <Check size={14} /> {isAcceptingMeetup ? 'Accepting...' : 'Accept this meetup'}
                     </Button>
                   )}
 
@@ -616,16 +631,16 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
 
             {tab === 'incoming' ? (
               <div className="flex gap-3">
-                <Button variant="found" onClick={() => onStatusChange('approved')} className="font-mono text-xs uppercase">
-                  <Check size={14} /> Approve claim
+                <Button variant="found" disabled={isUpdatingStatus} onClick={() => onStatusChange('approved')} className="font-mono text-xs uppercase">
+                  <Check size={14} /> {isUpdatingStatus ? 'Approving...' : 'Approve claim'}
                 </Button>
-                <Button variant="danger" onClick={() => onStatusChange('rejected')} className="font-mono text-xs uppercase">
-                  <X size={14} /> Reject
+                <Button variant="danger" disabled={isUpdatingStatus} onClick={() => onStatusChange('rejected')} className="font-mono text-xs uppercase">
+                  <X size={14} /> {isUpdatingStatus ? 'Rejecting...' : 'Reject claim'}
                 </Button>
               </div>
             ) : (
-              <Button variant="danger" onClick={() => onStatusChange('cancelled')} className="font-mono text-xs uppercase">
-                <X size={14} /> Cancel claim
+              <Button variant="danger" disabled={isUpdatingStatus} onClick={() => onStatusChange('cancelled')} className="font-mono text-xs uppercase">
+                <X size={14} /> {isUpdatingStatus ? 'Cancelling...' : 'Cancel claim'}
               </Button>
             )}
           </>
