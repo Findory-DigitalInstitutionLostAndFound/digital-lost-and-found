@@ -2,10 +2,11 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Check, ChevronDown, ChevronUp, Image, MessageSquare, Send, ShieldAlert, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { claimsService, type ClaimDetail } from '../services/claimMessageService';
-import { createClient } from '@supabase/supabase-js/dist/index.cjs';
+import { createClient } from '@supabase/supabase-js';
 import { QRCodeSVG } from 'qrcode.react';
 import { QrScanner } from './QrScanner';
 import { handOverService } from '../services/handOverService';
+import { setupRealtime } from '../services/chatTokenService';
 
 type ClaimTab = 'mine' | 'incoming' | 'archived';
 
@@ -91,32 +92,71 @@ export function ClaimsPage({ user, refreshCounts }: ClaimsPageProps) {
   useEffect(() => {
     if (!selectedId) return;
 
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseAnonKey) return;
+    let channel: ReturnType<ReturnType<typeof createClient>["channel"]> | null = null;
+    let supabase: ReturnType<typeof createClient> | null = null;
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-    const channel = supabase
-      .channel(`claim-chat-${selectedId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'claim_messages',
-          filter: `claim_id=eq.${selectedId}`,
-        },
-        () => {
-          // Silently fetch fresh claims data when a new message comes in via Realtime
-          fetchClaimsData(false);
+    const startRealTime = async () => {
+      try {
+        const accessToken = await setupRealtime();
+        console.log("Access token:", accessToken);
+        console.log("Token starts with:", accessToken?.substring(0, 20));
+        if (!accessToken) {
+          return;
         }
-      )
-      .subscribe();
 
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+        if (!supabaseUrl || !supabaseAnonKey) {
+          return;
+        }
+
+        //create supabase client with the access token
+        supabase = createClient(supabaseUrl, supabaseAnonKey, {
+          global: {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          },
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false,
+          },
+        });
+
+        await supabase.realtime.setAuth(accessToken);
+
+        //subscribe to new messages
+        channel = supabase
+          .channel(`claim-chat-${selectedId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'claim_messages',
+              filter: `claim_id=eq.${selectedId}`,
+            },
+            (payload) => {
+              console.log('New message received via Realtime:', payload);
+              // Silently fetch fresh claims data when a new message comes in via Realtime
+              fetchClaimsData(false);
+            }
+          )
+          .subscribe((status) => {
+            console.log('Realtime subscription status:', status);
+          });
+      } catch (error) {
+        console.error('Error setting up Realtime subscription:', error);
+      }
+    }
+    startRealTime();
+    
     return () => {
-      supabase.removeChannel(channel);
+      if (channel && supabase) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [selectedId]);
 
