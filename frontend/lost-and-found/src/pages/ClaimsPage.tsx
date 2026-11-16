@@ -491,12 +491,26 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
             </p>
 
             {bothAccepted ? (
-              <p className="text-sm text-[#06C167] font-medium">
-                Meetup agreed: {claim.meetup_location} ·{' '}
-                {claim.meetup_time
-                  ? new Date(claim.meetup_time).toLocaleString()
-                  : ''}
-              </p>
+              <div className="space-y-2">
+                <p className="text-sm text-[#06C167] font-medium">
+                  Meetup agreed: {claim.meetup_location} ·{' '}
+                  {claim.meetup_time
+                    ? claim.meetup_time.slice(0, 16).replace('T', ' ')
+                    : ''}
+                </p>
+
+                {isHighValue && !isFoundPerson && (
+                  <p className="text-xs text-[#0E0D0B]/70">
+                    Remember to bring your ID card. Staff at the service point may check it.
+                  </p>
+                )}
+
+                <p className="text-xs text-[#0E0D0B]/70">
+                  {isFoundPerson
+                    ? "Scan the claimant's QR code to hand over the item. Do not release it until the app confirms the transfer."
+                    : 'Generate a QR code when you meet so the found person can verify you in the app.'}
+                </p>
+              </div>
             ) : (
               <>
                 {/*place */}
