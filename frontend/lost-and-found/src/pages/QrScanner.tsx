@@ -44,10 +44,14 @@ export function QrScanner({ onScan, onError }: Props) {
         .stop()
         .catch(() => {})
         .finally(() => {
-          scanner.clear().catch(() => {});
+            try {
+                scanner.clear();
+            } catch (e) {
+                console.error('Failed to clear scanner', e);
+            }
           started.current = false;
         });
-      void cancelled;
+      void cancelled; // to avoid unused variable warning
     };
   }, [onScan, onError]);
 

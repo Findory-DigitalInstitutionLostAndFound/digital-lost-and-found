@@ -6,8 +6,8 @@ from app.service.qrServices import QrService
 from app.schemas.claim_schema import QRVerifyRequest
 
 router = APIRouter()
-
-@router.post("/{claim_id}/generate_qr")
+# route to generate QR code for a approved claim
+@router.post("/claims/{claim_id}/generate_qr")
 async def generate_qr_code(
     claim_id: str, 
     request: Request,
@@ -42,7 +42,8 @@ async def generate_qr_code(
     }
 
 
-@router.post("/{claim_id}/verify_qr")
+# route to verify QR code and complete handover
+@router.post("/claims/{claim_id}/verify_qr")
 async def verify_qr_code(
     claim_id: str, 
     payload: QRVerifyRequest,

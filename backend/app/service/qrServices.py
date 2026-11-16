@@ -68,6 +68,7 @@ class QrService:
 
             # only the owner can verify the qr
             item_owner_id = claim.get("items", {}).get("user_id")
+            item_id = claim.get("item_id")
             if item_owner_id != user_id:
                 raise HTTPException(status_code=403, detail="Only the founder who posted the item can verify the QR code for this claim")
             if claim.get("status") != "approved":
@@ -101,6 +102,14 @@ class QrService:
                 .eq("id", claim_id)
                 .execute()
             )
+
+            if item_id:
+                (supabase.table("items")
+                .update({"status": "claimed"})
+                .eq("id", item_id)
+                .execute()
+                )
+                
             return updated.data[0]
 
         except HTTPException:
