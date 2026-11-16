@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile
 from app.api.deps import get_current_user
 from app.service.fetch_claims_details_service import FetchClaimsDetailsService
 from app.service.update_claims_service import UpdateClaimsService
-from app.schemas.claim_schema import StatusUpdateSchema
+from app.schemas.claim_schema import StatusUpdateSchema, MeetupUpdateSchema
 from typing import Optional
 
 router = APIRouter()
@@ -100,3 +100,57 @@ async def send_message(
         raise http_exc 
     except Exception as e:
         raise HTTPException(status_code=500, detail= f"Internal server error while sending message: {str(e)}")
+
+# update meetup location and time
+@router.post("/claims/{claim_id}/update-meetup")
+async def update_meetup(
+    claim_id: str,
+    payload: MeetupUpdateSchema,
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    access_token = request.cookies.get("access_token")
+    user_id = current_user.get("sub")
+
+    if not access_token or not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated.")
+
+    try:
+        updated = await UpdateClaimsService.update_meetup(
+            claim_id=claim_id,
+            user_id=user_id,
+            meetup_location=payload.location,
+            meetup_time=payload.time,
+            access_token=access_token,
+        )
+        return {"status": "success", "data": updated}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# accept meetup location and time
+@router.post("/claims/{claim_id}/accept-meetup")
+async def accept_meetup(
+    claim_id: str,
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    access_token = request.cookies.get("access_token")
+    user_id = current_user.get("sub")
+
+    if not access_token or not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated.")
+
+    try:
+        updated = await UpdateClaimsService.accept_meetup(
+            claim_id=claim_id,
+            user_id=user_id,
+            access_token=access_token,
+        )
+        return {"status": "success", "data": updated}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

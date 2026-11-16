@@ -17,18 +17,23 @@ export type ClaimItemSummary = {
   item_type: 'lost' | 'found';
   public_description: string;
   blurred_image_url: string | null;
+  is_high_valued: boolean;
 };
 
 // complete claim object type
 export type ClaimDetail = {
   id: string;
   item_id: string;
-  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled' | 'handover_completed';
   claimant_user_id: string;
   claimant_guest_id: string | null;
   owner_last_read_at: string | null;
   claimant_last_read_at: string | null;
   created_at: string;
+  meetup_location?: string | null;
+  meetup_time?: string | null;
+  owner_accepted_meetup?: boolean;
+  claimant_accepted_meetup?: boolean;
   is_unread: boolean; // Computed by backend
   item: ClaimItemSummary;
   messages: ClaimMessage[];
@@ -45,6 +50,13 @@ export type SendMessageData = {
   claimId: string;
   content: string;
   imageFile?: File | null;
+};
+
+//Meeetup ti,e and location update type
+export type UpdateMeetupData = {
+  claimId: string;
+  location: string;
+  time: string;
 };
 
 
@@ -69,5 +81,16 @@ export const claimsService = {
 
     async markClaimAsRead(claimId: string): Promise<void> {
         await api.post(`/claims/${claimId}/update-last-read`);
-    }
+    },
+
+    async updateMeetupDetails(data: UpdateMeetupData): Promise<void> {
+        await api.post(`/claims/${data.claimId}/update-meetup`, {
+            location: data.location,
+            time: data.time,
+        });
+    },
+
+    async acceptMeetup(claimId: string): Promise<void> {
+        await api.post(`/claims/${claimId}/accept-meetup`);
+    },
 }

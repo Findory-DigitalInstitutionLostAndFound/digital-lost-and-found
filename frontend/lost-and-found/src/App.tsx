@@ -12,6 +12,7 @@ import { Header } from './components/layout/Header'
 import { ThemeProvider } from './components/context/ThemeProvider'
 import { useHandleEmailConfirmation } from './hooks/useHandleEmailConfirmation'
 import { authService } from './services/authService'
+import { claimsService } from './services/claimMessageService'
 // @ts-ignore Vite handles CSS side-effect imports at runtime.
 import './index.css'
 import { GuestPage } from './pages/GuestPage'
@@ -29,7 +30,7 @@ function AppContent() {
   const [currentPage, setCurrentPage] = useState<Page>(getInitialPage())
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
   const [pendingMatchesCount] = useState<number>(1)
-  const [pendingClaimsCount] = useState<number>(1)
+  const [pendingClaimsCount, setPendingClaimsCount] = useState<number>(0)
 
   // Start with user as null, will be set after login or registration
   const [user, setUser] = useState<{ name: string; email: string; phone: string; user_id: string } | null>(null)
@@ -64,6 +65,24 @@ function AppContent() {
 
     window.scrollTo(0, 0)
   }
+
+  // Function to fetch unread claims count from backend
+  const refreshPendingCounts = async () => {
+    if (!user) return
+    try {
+      const claimsData = await claimsService.getClaims()
+      const allClaims = [...claimsData.claims_as_claimant, ...claimsData.claims_as_founder]
+      const unreadCount = allClaims.filter(c => c.is_unread).length
+      setPendingClaimsCount(unreadCount)
+    } catch (err) {
+      console.error('Failed to fetch pending counts:', err)
+    }
+  }
+
+  // Refresh counts on session load and page navigation
+  useEffect(() => {
+    refreshPendingCounts()
+  }, [currentPage, user])
 
   //Automatically  clean access token from URL after email confirmation to prevent it from being visible in the address bar
   useHandleEmailConfirmation(navigate, (confirmedUser) => {
@@ -129,7 +148,7 @@ function AppContent() {
       case 'guest':
         return <GuestPage {...pageProps} />
       case 'claims':
-        return <ClaimsPage {...pageProps} />
+        return <ClaimsPage {...pageProps} refreshCounts={refreshPendingCounts} />
       case 'report-lost':
         return <ReportItemPage mode="lost" navigate={navigate} isGuest={!user}/>
       case 'report-found':
@@ -167,6 +186,7 @@ function AppContent() {
         user={user}
         logout={handleLogout}
         pendingMatchesCount={pendingMatchesCount}
+        pendingClaimsCount={pendingClaimsCount}
       />
 
       {/* Main Content Area */}
