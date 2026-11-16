@@ -11,6 +11,7 @@ from app.routers.guest_item import router as guest_items_router
 from app.routers.create_claim import router as create_claim_router
 from app.routers.claims import router as claims_router
 from app.routers.get_items import router as get_items_router
+from app.routers.qr_verfication import router as qr_verification_router
 
 # create fast api
 app = FastAPI(title="Digital Lost and Found API")  
@@ -36,6 +37,8 @@ app.include_router(create_claim_router)
 app.include_router(claims_router)
 # include get items router
 app.include_router(get_items_router)
+# include qr verification router
+app.include_router(qr_verification_router)
 # Initialize heavy models only at startup to avoid reloading them on every request
 ocr_reader = easyocr.Reader(['en'])  # Load the OCR model 
 
