@@ -14,7 +14,7 @@ def main():
         r=client.get('/matches/live')
         assert r.status_code==401
         results['live_without_session']=r.status_code
-        for source in ['robust','baseline']:
+        for source in ['combined','robust','baseline']:
             r=client.get('/matches/dataset',params={'source':source},headers={'Origin':'http://localhost:5173'})
             r.raise_for_status()
             assert r.headers.get('access-control-allow-origin')=='http://localhost:5173'

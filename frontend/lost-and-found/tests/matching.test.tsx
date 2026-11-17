@@ -75,7 +75,7 @@ describe('matching UI and shared state', () => {
     await user.selectOptions(screen.getByLabelText('Matching method'), 'baseline')
     await waitFor(() => expect(count()).toBe('2'))
     expect(api.get).toHaveBeenLastCalledWith('/matches/live', { params: { source: 'baseline', top_k: 3 } })
-    await user.selectOptions(screen.getByLabelText('Matching method'), 'robust')
+    await user.selectOptions(screen.getByLabelText('Matching method'), 'combined')
     await waitFor(() => expect(count()).toBe('1'))
   })
   it('shows errors with no fake count, and supports retry', async () => {
@@ -123,5 +123,22 @@ describe('request and identity isolation', () => {
     await screen.findByRole('button',{name:'confirmed (1)'})
     expect(count()).toBe('0')
     expect(claimService.createClaim).not.toHaveBeenCalled()
+  })
+})
+
+describe('combined evidence display', () => {
+  it('shows image evidence and its rank separately from the text score', async () => {
+    vi.mocked(api.get).mockResolvedValue({data:[{...rows[0],imageSimilarity:.91,rankingScore:99.25,evidence:'text+image'}]})
+    render(<Harness/>);
+    await screen.findByText(/Text \+ image ranking/)
+    expect(screen.getByText('Image cosine: 0.910')).toBeTruthy()
+    expect(screen.getByText('90/100')).toBeTruthy()
+    expect(screen.getByLabelText('Matching method')).toHaveProperty('value','combined')
+  })
+  it('labels a missing-image fallback without inventing an image score', async () => {
+    vi.mocked(api.get).mockResolvedValue({data:[{...rows[0],rankingScore:100,evidence:'text-only'}]})
+    render(<Harness/>);
+    await screen.findByText(/Text-only fallback/)
+    expect(screen.queryByText(/Image cosine:/)).toBeNull()
   })
 })

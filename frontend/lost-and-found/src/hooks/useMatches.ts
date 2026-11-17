@@ -3,7 +3,7 @@ import { api } from '../services/api'
 import { claimService } from '../services/claimService'
 
 export type MatchStatus = 'pending' | 'confirmed' | 'dismissed'
-export type MatchSource = 'robust' | 'baseline'
+export type MatchSource = 'combined' | 'robust' | 'baseline'
 export type MatchMode = 'live' | 'dataset'
 export interface MatchItem {
   id: string; type: string; title: string; description: string
@@ -11,6 +11,7 @@ export interface MatchItem {
 }
 export interface ItemMatch {
   id: string; score: number; imageSimilarity: number | null
+  rankingScore?: number | null; evidence?: string; imageStatus?: string
   status: MatchStatus; commonTags: string[]; createdAt: string
   lostItem: MatchItem; foundItem: MatchItem
 }
@@ -28,7 +29,7 @@ function saveDecision(key: string, id: string, status: MatchStatus) {
 
 export function useMatches(userId?: string) {
   const [mode, setMode] = useState<MatchMode>('live')
-  const [source, setSource] = useState<MatchSource>('robust')
+  const [source, setSource] = useState<MatchSource>('combined')
   const [revision, setRevision] = useState(0)
   const key = `matching-review-v1:${userId || 'signed-out'}:${mode}:${source}`
   const [state, setState] = useState<{ key: string; rows: ItemMatch[]; loading: boolean; error: string }>({ key: '', rows: [], loading: false, error: '' })

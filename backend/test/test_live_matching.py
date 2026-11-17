@@ -105,3 +105,23 @@ def test_actual_baseline_scoring_with_live_record_format(setup,monkeypatch):
     monkeypatch.setattr(service,'score_live',lambda left,right,source:[r for a in left for b in right if (r:=calculate_match_score(a,b)) is not None])
     rows=service.get_live_matches('token','me',source='baseline')
     assert len(rows)==1 and rows[0]['score']==100
+
+
+def test_combined_live_ranking_uses_images_only_for_text_eligible_pairs(setup,monkeypatch):
+    setup['items'] += [item('F2'),item('F3')]
+    monkeypatch.setattr(service,'score_live',lambda *args:[dict(lost_item_id='L',found_item_id='F',score=80,conflicts=[]),dict(lost_item_id='L',found_item_id='F2',score=80,conflicts=[]),dict(lost_item_id='L',found_item_id='F3',score=99,conflicts=['size'])])
+    def visual(left,right,rows,token):
+        assert token=='session'
+        assert {r['found_item_id'] for r in rows}=={'F','F2'}
+        return {('L','F'):.6,('L','F2'):.9},'available'
+    monkeypatch.setattr(service,'score_images',visual)
+    rows=service.get_live_matches('session','me',source='combined')
+    assert [r['foundItem']['id'] for r in rows]==['F2','F']
+    assert rows[0]['imageSimilarity']==.9
+    assert rows[0]['evidence']=='text+image'
+    assert rows[0]['score']==80
+
+
+def test_text_only_modes_do_not_fetch_images(setup,monkeypatch):
+    monkeypatch.setattr(service,'score_images',lambda *args:pytest.fail('text-only must not fetch images'))
+    assert service.get_live_matches('token','me',source='robust')[0]['imageSimilarity'] is None

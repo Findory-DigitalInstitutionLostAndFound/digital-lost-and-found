@@ -26,7 +26,7 @@ export function MatchesPage({ controller }: { controller: MatchesController }) {
       <div className="border-b border-[#0E0D0B]/10 px-8 py-4 bg-[#0E0D0B] flex items-start gap-4 text-[#FAF6EC]">
         <Info size={14} className="text-[#6B6560] shrink-0 mt-0.5" />
         <p className="font-mono text-[11px] text-[#6B6560] leading-relaxed">
-          Up to three candidates per lost report are shown at scores of 70/100 or higher. Robust matching compares description meaning and checks specific conflicting details. Image scores break ties; they cannot override a rejected match.
+          Up to three candidates per lost report are shown at scores of 70/100 or higher. Robust matching compares description meaning and checks specific conflicting details. Combined mode fuses text and image ranks when both photos are usable. Missing images fall back to text. Images cannot override text eligibility or detected conflicts.
           {mode === 'live' ? 'Live suggestions use your open lost reports and visible found reports. Create a claim to begin ownership verification. Dismissals are saved in this browser.' : 'Dataset decisions are saved in this browser only. They do not create claims or notify anyone.'}
         </p>
       </div>
@@ -41,7 +41,8 @@ export function MatchesPage({ controller }: { controller: MatchesController }) {
         </label>
         <label className="font-mono text-xs">
           Matching method{' '}
-          <select value={source} disabled={!!busyId} onChange={e => { setSource(e.target.value as 'robust' | 'baseline'); setFilter('all') }} className="ml-2 border border-[#0E0D0B]/20 bg-transparent p-2">
+          <select value={source} disabled={!!busyId} onChange={e => { setSource(e.target.value as 'combined' | 'robust' | 'baseline'); setFilter('all') }} className="ml-2 border border-[#0E0D0B]/20 bg-transparent p-2">
+            <option value="combined">Combined text + image ranking</option>
             <option value="robust">Semantic + detail checks</option>
             <option value="baseline">Original text matcher</option>
           </select>
@@ -106,7 +107,7 @@ function MatchBlock({ match, onConfirm, onDismiss, live, busy }: {
       {/* Match header bar */}
       <div className="flex items-center justify-between px-8 py-3 bg-[#FAF6EC] border-b border-[#0E0D0B]/10">
         <div className="flex items-center gap-4">
-          <div className="font-mono text-[10px] text-[#0E0D0B]/65 uppercase tracking-widest">Match score</div>
+          <div className="font-mono text-[10px] text-[#0E0D0B]/65 uppercase tracking-widest">Text eligibility score</div>
           <div className="text-3xl font-black leading-none" style={{ fontFamily: 'Fraunces, serif', color: scoreColor }}>
             {score}/100
           </div>
@@ -117,6 +118,7 @@ function MatchBlock({ match, onConfirm, onDismiss, live, busy }: {
               <span key={tag} className="bg-[#0E0D0B] text-[#F0EAD6] font-mono text-[10px] px-1.5 py-0.5">#{tag}</span>
             ))}
           </div>
+          {match.rankingScore != null && <span className="font-mono text-[10px]">{match.evidence === 'text+image' ? 'Text + image ranking' : 'Text-only fallback'} · index {match.rankingScore.toFixed(2)}</span>}
           {match.imageSimilarity != null && (
             <span className="font-mono text-[10px]">Image cosine: {match.imageSimilarity.toFixed(3)}</span>
           )}

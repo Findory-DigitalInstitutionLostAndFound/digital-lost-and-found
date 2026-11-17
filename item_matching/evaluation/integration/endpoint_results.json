@@ -1,6 +1,13 @@
 {
   "live_without_session": 401,
   "dataset": {
+    "combined": {
+      "http_status": 200,
+      "cards": 52,
+      "photo_references": 69,
+      "sample_photo_status": 200,
+      "cors_passed": true
+    },
     "robust": {
       "http_status": 200,
       "cards": 52,

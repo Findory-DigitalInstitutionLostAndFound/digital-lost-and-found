@@ -6,6 +6,7 @@ from threading import Lock
 from fastapi import HTTPException
 from app.core.supabase_user import get_user_supabase_client
 from app.service.matching_service import display_item
+from app.service.image_matching_service import score_images
 
 ROOT = Path(__file__).resolve().parents[3]
 FIELDS = 'id,user_id,item_type,title,category,public_description,location_name,event_timestamp,blurred_image_url,ai_tags'
@@ -59,7 +60,7 @@ def live_item(item):
     return view
 
 
-def get_live_matches(token, user_id, min_score=70, source='robust', top_k=3):
+def get_live_matches(token, user_id, min_score=70, source='combined', top_k=3):
     if not user_id:
         raise HTTPException(status_code=401, detail='Not authenticated')
     try:
@@ -79,17 +80,27 @@ def get_live_matches(token, user_id, min_score=70, source='robust', top_k=3):
         if len(left) * len(right) > 25000:
             raise HTTPException(status_code=503, detail='Too many candidate pairs. Narrow matching retrieval before retrying.')
         rows = score_live(left, right, source)
+        image_status = 'not_requested'
+        if source == 'combined':
+            from matching.combined_matcher import combine_rankings
+            eligible = [r for r in rows if r['score'] >= min_score and not r.get('conflicts')]
+            similarities, image_status = score_images(left, right, eligible, token)
+            rows = combine_rankings(rows, similarities, min_score)
+        else:
+            rows = sorted(rows, key=lambda r: (-r['score'], r['found_item_id']))
         claims = fetch_all(client.table('claims').select('item_id,status').eq('claimant_user_id', user_id).in_('status', ['pending', 'approved']))
         claimed = {r['item_id'] for r in claims}
         li, fi = {r['id']: r for r in lost}, {r['id']: r for r in found}
         selected, counts = [], {}
-        for row in sorted(rows, key=lambda r: (-r['score'], r['found_item_id'])):
+        for row in rows:
             a, b = row['lost_item_id'], row['found_item_id']
             if row['score'] < min_score or row.get('conflicts') or a not in li or b not in fi or counts.get(a, 0) >= top_k:
                 continue
             lost_view, found_view = live_item(li[a]), live_item(fi[b])
             selected.append(dict(id=f'{a}:{b}', score=row['score'], method=source,
-                imageSimilarity=None, status='confirmed' if b in claimed else 'pending',
+                imageSimilarity=row.get('imageSimilarity'), textScore=row['score'],
+                rankingScore=row.get('rankingScore'), evidence=row.get('evidence', 'text-only'),
+                imageStatus=image_status, status='confirmed' if b in claimed else 'pending',
                 commonTags=sorted(set(lost_view['tags']) & set(found_view['tags'])),
                 createdAt=found_view['date'], lostItem=lost_view, foundItem=found_view))
             counts[a] = counts.get(a, 0) + 1

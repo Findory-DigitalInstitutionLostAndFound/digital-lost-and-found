@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-17",
+  "python_tests": {
+    "passed": 117,
+    "failed": 0
+  },
+  "ui_tests": {
+    "passed": 13,
+    "failed": 0,
+    "environment": "jsdom; API mocks"
+  },
+  "frontend_build": "passed with existing large chunk warning",
+  "full_application_smoke": "dataset combined/robust/baseline HTTP 200; unauthenticated live HTTP 401; dataset image and CORS checks passed",
+  "actual_clip_smoke": "passed with local photo bytes replacing Storage downloads",
+  "live_signed_in_storage_verification": "not performed",
+  "no_database_writes": true,
+  "source_sha256": {
+    "item_matching/matching/combined_matcher.py": "28095f5d61028f844eb5be3d94b0610eb843c860f4bac8bb5b1f6a2474791938",
+    "backend/app/service/image_matching_service.py": "63aa39a5a88cd32ca94a7a530ce0cbe4eabf10b0799c3000ae79344609e31e12",
+    "backend/app/service/live_matching_service.py": "4bc59c93bc0a10227432a49cccf9b808e04880c821d28e5e141efa7452028462",
+    "frontend/lost-and-found/src/pages/MatchesPage.tsx": "94aa4ffac50de10ae465a390a9b2f950d11d40b3575cec3c4a8b304ee99339df"
+  }
+}

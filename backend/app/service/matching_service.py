@@ -21,9 +21,9 @@ def display_item(item):
     }
 
 
-def get_dataset_matches(min_score=70, source="robust", top_k=3):
+def get_dataset_matches(min_score=70, source="combined", top_k=3):
     """Return up to top_k candidates per lost report; never rescue conflicts with images."""
-    if source not in {"baseline", "robust"}:
+    if source not in {"baseline", "robust", "combined"}:
         raise ValueError("Unknown matching source")
     if top_k is not None and top_k < 1:
         raise ValueError("top_k must be positive")
@@ -35,7 +35,7 @@ def get_dataset_matches(min_score=70, source="robust", top_k=3):
         for row in (load_json(image_path) if image_path.exists() else [])
     }
     matches = []
-    results_file = "robust_results.json" if source == "robust" else "text_results.json"
+    results_file = "robust_results.json" if source != "baseline" else "text_results.json"
     for row in load_json(MATCHING_DIR / results_file):
         lost_id, found_id = row["lost_item_id"], row["found_item_id"]
         if row["score"] < min_score or row.get("conflicts") or lost_id not in lost or found_id not in found:
@@ -47,15 +47,25 @@ def get_dataset_matches(min_score=70, source="robust", top_k=3):
             "id": f"{lost_id}:{found_id}",
             "score": row["score"],
             "method": source,
-            "imageSimilarity": images.get((lost_id, found_id)),
+            "imageSimilarity": images.get((lost_id, found_id)) if source == "combined" else None,
             "status": "pending",
             "commonTags": sorted(set(lost_item["tags"]) & set(found_item["tags"])),
             "createdAt": found_item["date"],
             "lostItem": lost_item,
             "foundItem": found_item,
         })
-    # Image evidence only breaks text-score ties, never overrides eligibility.
-    matches.sort(key=lambda m: (-m["score"], -(m["imageSimilarity"] if m["imageSimilarity"] is not None else -1), m["id"]))
+    if source == "combined":
+        import sys
+        if str(MATCHING_DIR) not in sys.path:
+            sys.path.insert(0, str(MATCHING_DIR))
+        from matching.combined_matcher import combine_rankings
+        scores = [dict(lost_item_id=m['lostItem']['id'], found_item_id=m['foundItem']['id'], score=m['score']) for m in matches]
+        fused = combine_rankings(scores, images, min_score)
+        views = {m['id']:m for m in matches}
+        matches = [dict(views[f"{r['lost_item_id']}:{r['found_item_id']}"], rankingScore=r['rankingScore'], textScore=r['textScore'], imageSimilarity=r['imageSimilarity'], evidence=r['evidence']) for r in fused]
+    # Text-only methods retain deterministic text order for a clean comparison.
+    if source != "combined":
+        matches.sort(key=lambda m: (-m["score"], m["id"]))
     counts = {}
     selected = []
     for match in matches:
