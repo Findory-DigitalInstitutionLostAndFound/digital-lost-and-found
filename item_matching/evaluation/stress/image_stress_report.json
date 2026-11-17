@@ -1,0 +1,110 @@
+{
+  "notes": [
+    "Synthetic perturbations of found-image tensors after CLIP preprocessing; not new photographs or validation of viewpoint robustness.",
+    "All lost items remain unchanged; same candidate/date filtering as original matcher."
+  ],
+  "scenarios": {
+    "original": {
+      "pairs": 2299,
+      "at_0_8": {
+        "threshold": 0.8,
+        "tp": 41,
+        "fp": 41,
+        "fn": 7,
+        "precision": 0.5,
+        "recall": 0.8542,
+        "f1": 0.6308
+      },
+      "ranking": {
+        "hit_at_1": 0.9167,
+        "hit_at_3": 0.9792,
+        "hit_at_5": 1.0
+      }
+    },
+    "horizontal_flip": {
+      "pairs": 2299,
+      "at_0_8": {
+        "threshold": 0.8,
+        "tp": 40,
+        "fp": 38,
+        "fn": 8,
+        "precision": 0.5128,
+        "recall": 0.8333,
+        "f1": 0.6349
+      },
+      "ranking": {
+        "hit_at_1": 0.8333,
+        "hit_at_3": 0.9792,
+        "hit_at_5": 1.0
+      }
+    },
+    "quarter_turn": {
+      "pairs": 2299,
+      "at_0_8": {
+        "threshold": 0.8,
+        "tp": 34,
+        "fp": 37,
+        "fn": 14,
+        "precision": 0.4789,
+        "recall": 0.7083,
+        "f1": 0.5714
+      },
+      "ranking": {
+        "hit_at_1": 0.7917,
+        "hit_at_3": 0.9375,
+        "hit_at_5": 0.9583
+      }
+    },
+    "darkened_50_percent": {
+      "pairs": 2299,
+      "at_0_8": {
+        "threshold": 0.8,
+        "tp": 41,
+        "fp": 40,
+        "fn": 7,
+        "precision": 0.5062,
+        "recall": 0.8542,
+        "f1": 0.6357
+      },
+      "ranking": {
+        "hit_at_1": 0.8958,
+        "hit_at_3": 0.9583,
+        "hit_at_5": 0.9583
+      }
+    },
+    "center_crop_70_percent": {
+      "pairs": 2299,
+      "at_0_8": {
+        "threshold": 0.8,
+        "tp": 41,
+        "fp": 30,
+        "fn": 7,
+        "precision": 0.5775,
+        "recall": 0.8542,
+        "f1": 0.6891
+      },
+      "ranking": {
+        "hit_at_1": 0.875,
+        "hit_at_3": 0.9583,
+        "hit_at_5": 1.0
+      }
+    },
+    "occluded_right_third": {
+      "pairs": 2299,
+      "at_0_8": {
+        "threshold": 0.8,
+        "tp": 33,
+        "fp": 22,
+        "fn": 15,
+        "precision": 0.6,
+        "recall": 0.6875,
+        "f1": 0.6408
+      },
+      "ranking": {
+        "hit_at_1": 0.8125,
+        "hit_at_3": 0.9583,
+        "hit_at_5": 0.9583
+      }
+    }
+  }
+}

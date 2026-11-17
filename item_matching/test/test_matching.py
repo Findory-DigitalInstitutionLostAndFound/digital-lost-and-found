@@ -60,10 +60,12 @@ def test_more_than_two_days_apart_gets_zero_points():
     assert date_score(make_item(timestamp="2026-10-12T09:00:00"), make_item(timestamp="2026-10-15T09:00:00")) == 0
 
 
-def test_date_score_is_symmetric():
+def test_date_score_respects_lost_then_found_order():
     a = make_item(timestamp="2026-10-12T09:00:00")
     b = make_item(timestamp="2026-10-13T09:00:00")
-    assert date_score(a, b) == date_score(b, a)
+    assert date_score(a, b) == 10
+    assert date_score(b, a) == 0
+    assert calculate_match_score(b, a) is None
 
 
 # Text similarity

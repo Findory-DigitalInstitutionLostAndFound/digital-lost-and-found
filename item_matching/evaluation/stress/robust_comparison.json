@@ -1,0 +1,328 @@
+{
+  "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "notes": [
+    "Development comparison only: stress cases informed the implementation, not held-out validation.",
+    "Unlisted pairs treated as negatives; verify ground truth completeness.",
+    "Semantic gate .45 and score cutoff 70 are heuristic, not calibrated probabilities."
+  ],
+  "dataset": {
+    "baseline": {
+      "at_70": {
+        "threshold": 70,
+        "tp": 48,
+        "fp": 1,
+        "fn": 0,
+        "precision": 0.9796,
+        "recall": 1.0,
+        "f1": 0.9897
+      },
+      "ranking": {
+        "hit_at_1": 1.0,
+        "hit_at_3": 1.0,
+        "hit_at_5": 1.0
+      }
+    },
+    "robust": {
+      "at_70": {
+        "threshold": 70,
+        "tp": 48,
+        "fp": 4,
+        "fn": 0,
+        "precision": 0.9231,
+        "recall": 1.0,
+        "f1": 0.96
+      },
+      "ranking": {
+        "hit_at_1": 1.0,
+        "hit_at_3": 1.0,
+        "hit_at_5": 1.0
+      }
+    }
+  },
+  "stress": [
+    {
+      "id": "paraphrase-wallet",
+      "metadata": "description_only",
+      "expected_match": true,
+      "baseline_score": 61,
+      "robust_score": 70,
+      "similarity": 0.49457,
+      "conflicts": [],
+      "baseline_pass": false,
+      "robust_pass": true
+    },
+    {
+      "id": "paraphrase-wallet",
+      "metadata": "original_title_tags",
+      "expected_match": true,
+      "baseline_score": 75,
+      "robust_score": 70,
+      "similarity": 0.49457,
+      "conflicts": [],
+      "baseline_pass": true,
+      "robust_pass": true
+    },
+    {
+      "id": "paraphrase-keys",
+      "metadata": "description_only",
+      "expected_match": true,
+      "baseline_score": 52,
+      "robust_score": 65,
+      "similarity": 0.503434,
+      "conflicts": [],
+      "baseline_pass": false,
+      "robust_pass": false
+    },
+    {
+      "id": "paraphrase-keys",
+      "metadata": "original_title_tags",
+      "expected_match": true,
+      "baseline_score": 67,
+      "robust_score": 65,
+      "similarity": 0.503434,
+      "conflicts": [],
+      "baseline_pass": false,
+      "robust_pass": false
+    },
+    {
+      "id": "typos-backpack",
+      "metadata": "description_only",
+      "expected_match": true,
+      "baseline_score": 73,
+      "robust_score": 73,
+      "similarity": 0.453264,
+      "conflicts": [],
+      "baseline_pass": true,
+      "robust_pass": true
+    },
+    {
+      "id": "typos-backpack",
+      "metadata": "original_title_tags",
+      "expected_match": true,
+      "baseline_score": 86,
+      "robust_score": 73,
+      "similarity": 0.453264,
+      "conflicts": [],
+      "baseline_pass": true,
+      "robust_pass": true
+    },
+    {
+      "id": "finnish-wallet",
+      "metadata": "description_only",
+      "expected_match": true,
+      "baseline_score": 62,
+      "robust_score": 87,
+      "similarity": 0.843032,
+      "conflicts": [],
+      "baseline_pass": false,
+      "robust_pass": true
+    },
+    {
+      "id": "finnish-wallet",
+      "metadata": "original_title_tags",
+      "expected_match": true,
+      "baseline_score": 78,
+      "robust_score": 87,
+      "similarity": 0.843032,
+      "conflicts": [],
+      "baseline_pass": true,
+      "robust_pass": true
+    },
+    {
+      "id": "word-order-laptop",
+      "metadata": "description_only",
+      "expected_match": true,
+      "baseline_score": 59,
+      "robust_score": 82,
+      "similarity": 0.744281,
+      "conflicts": [],
+      "baseline_pass": false,
+      "robust_pass": true
+    },
+    {
+      "id": "word-order-laptop",
+      "metadata": "original_title_tags",
+      "expected_match": true,
+      "baseline_score": 71,
+      "robust_score": 82,
+      "similarity": 0.744281,
+      "conflicts": [],
+      "baseline_pass": true,
+      "robust_pass": true
+    },
+    {
+      "id": "sparse-phone",
+      "metadata": "description_only",
+      "expected_match": true,
+      "baseline_score": 67,
+      "robust_score": 83,
+      "similarity": 0.656994,
+      "conflicts": [],
+      "baseline_pass": false,
+      "robust_pass": true
+    },
+    {
+      "id": "sparse-phone",
+      "metadata": "original_title_tags",
+      "expected_match": true,
+      "baseline_score": 85,
+      "robust_score": 83,
+      "similarity": 0.656994,
+      "conflicts": [],
+      "baseline_pass": true,
+      "robust_pass": true
+    },
+    {
+      "id": "negated-wallet-detail",
+      "metadata": "description_only",
+      "expected_match": false,
+      "baseline_score": 81,
+      "robust_score": 49,
+      "similarity": 0.936861,
+      "conflicts": [
+        "sticker_present_vs_absent"
+      ],
+      "baseline_pass": false,
+      "robust_pass": true
+    },
+    {
+      "id": "negated-wallet-detail",
+      "metadata": "original_title_tags",
+      "expected_match": false,
+      "baseline_score": 87,
+      "robust_score": 49,
+      "similarity": 0.936861,
+      "conflicts": [
+        "sticker_present_vs_absent"
+      ],
+      "baseline_pass": false,
+      "robust_pass": true
+    },
+    {
+      "id": "negated-key-count",
+      "metadata": "description_only",
+      "expected_match": false,
+      "baseline_score": 56,
+      "robust_score": 49,
+      "similarity": 0.927014,
+      "conflicts": [
+        "different_key_counts"
+      ],
+      "baseline_pass": true,
+      "robust_pass": true
+    },
+    {
+      "id": "negated-key-count",
+      "metadata": "original_title_tags",
+      "expected_match": false,
+      "baseline_score": 71,
+      "robust_score": 49,
+      "similarity": 0.927014,
+      "conflicts": [
+        "different_key_counts"
+      ],
+      "baseline_pass": false,
+      "robust_pass": true
+    },
+    {
+      "id": "conflicting-laptop-size",
+      "metadata": "description_only",
+      "expected_match": false,
+      "baseline_score": 86,
+      "robust_score": 49,
+      "similarity": 0.944141,
+      "conflicts": [
+        "different_screen_sizes"
+      ],
+      "baseline_pass": false,
+      "robust_pass": true
+    },
+    {
+      "id": "conflicting-laptop-size",
+      "metadata": "original_title_tags",
+      "expected_match": false,
+      "baseline_score": 89,
+      "robust_score": 49,
+      "similarity": 0.944141,
+      "conflicts": [
+        "different_screen_sizes"
+      ],
+      "baseline_pass": false,
+      "robust_pass": true
+    },
+    {
+      "id": "wrong-backpack-colour",
+      "metadata": "description_only",
+      "expected_match": false,
+      "baseline_score": 79,
+      "robust_score": 49,
+      "similarity": 0.845544,
+      "conflicts": [
+        "different_object_colours"
+      ],
+      "baseline_pass": false,
+      "robust_pass": true
+    },
+    {
+      "id": "wrong-backpack-colour",
+      "metadata": "original_title_tags",
+      "expected_match": false,
+      "baseline_score": 88,
+      "robust_score": 49,
+      "similarity": 0.845544,
+      "conflicts": [
+        "different_object_colours"
+      ],
+      "baseline_pass": false,
+      "robust_pass": true
+    },
+    {
+      "id": "unrelated-same-context",
+      "metadata": "description_only",
+      "expected_match": false,
+      "baseline_score": 62,
+      "robust_score": 49,
+      "similarity": 0.349661,
+      "conflicts": [],
+      "baseline_pass": true,
+      "robust_pass": true
+    },
+    {
+      "id": "unrelated-same-context",
+      "metadata": "original_title_tags",
+      "expected_match": false,
+      "baseline_score": 79,
+      "robust_score": 49,
+      "similarity": 0.349661,
+      "conflicts": [],
+      "baseline_pass": false,
+      "robust_pass": true
+    },
+    {
+      "id": "boilerplate-wallet",
+      "metadata": "description_only",
+      "expected_match": true,
+      "baseline_score": 56,
+      "robust_score": 75,
+      "similarity": 0.605388,
+      "conflicts": [],
+      "baseline_pass": false,
+      "robust_pass": true
+    },
+    {
+      "id": "boilerplate-wallet",
+      "metadata": "original_title_tags",
+      "expected_match": true,
+      "baseline_score": 69,
+      "robust_score": 75,
+      "similarity": 0.605388,
+      "conflicts": [],
+      "baseline_pass": false,
+      "robust_pass": true
+    }
+  ],
+  "summary": {
+    "baseline_stress_passed": 8,
+    "robust_stress_passed": 22
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "live_without_session": 401,
+  "dataset": {
+    "robust": {
+      "http_status": 200,
+      "cards": 52,
+      "photo_references": 69,
+      "sample_photo_status": 200,
+      "cors_passed": true
+    },
+    "baseline": {
+      "http_status": 200,
+      "cards": 49,
+      "photo_references": 64,
+      "sample_photo_status": 200,
+      "cors_passed": true
+    }
+  },
+  "notes": [
+    "No signed-in Supabase session or real claim creation was tested."
+  ]
+}
