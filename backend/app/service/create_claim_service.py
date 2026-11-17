@@ -5,6 +5,17 @@ import json
 import base64
 from google.genai import types
 from datetime import datetime, timezone
+import concurrent.futures
+
+# Helper function to call a function with a timeout
+def _call_with_timeout(func, *args, timeout=12.0, **kwargs):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(func, *args, **kwargs)
+        try:
+            return future.result(timeout=timeout)
+        except concurrent.futures.TimeoutError:
+            future.cancel()
+            raise TimeoutError(f"Timed out after {timeout}s")
 
 class CreateClaimService:
     @staticmethod
@@ -213,7 +224,7 @@ class CreateClaimService:
 
         # try gemini first(it supports image input)
         if gemini_client:
-            gemini_models = ["gemini-3.8-flash", "gemini-3.5-flash"]
+            gemini_models = ["gemini-3.5-flash-lite", "gemini-3.5-flash","gemini-3.8-flash"]
             for model in gemini_models:
                 try:
                     print(f"Trying Gemini model for questions: {model}")
@@ -223,13 +234,15 @@ class CreateClaimService:
                     if blurred_image_bytes:
                         contents.append(types.Part.from_bytes(data=blurred_image_bytes, mime_type=blurred_mime_type))
         
-                    response = gemini_client.models.generate_content(
+                    response = _call_with_timeout(
+                        gemini_client.models.generate_content,
                         model=model,
                         contents=contents,
                         config=types.GenerateContentConfig(
                             response_mime_type="application/json",
                             temperature=0.3 
-                        )
+                        ),
+                        timeout=12.0 # 10 seconds
                     )
                     questions = _parse_json_array(response.text)
                     print(f"Successfully generated questions using Gemini ({model})")
@@ -250,20 +263,29 @@ class CreateClaimService:
                         "type": "image_url",
                         "image_url": {"url": image_data_url}
                     })
+                if blurred_image_bytes:
+                    encoded_blurred_image = base64.b64encode(blurred_image_bytes).decode("utf-8")
+                    blurred_image_data_url = f"data:{blurred_mime_type};base64,{encoded_blurred_image}"
+                    messages_content.append({
+                        "type": "image_url",
+                        "image_url": {"url": blurred_image_data_url}
+                    })
 
                 openrouter_models = [
                     "openrouter/free",
                     "nvidia/nemotron-3.5-super-vl:free",
-                    "google/gemma-4-31b-it:free"
+                    "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
                 ]
                 
                 for model in openrouter_models:
                     try:
                         print(f"Trying OpenRouter fallback model: {model}")
-                        response = openrouter_client.chat.completions.create(
+                        response = _call_with_timeout(
+                            openrouter_client.chat.completions.create,
                             model=model,
                             messages=[{"role": "user", "content": messages_content}],
                             temperature=0.3,
+                            timeout=12.0
                         )
                         content_text = response.choices[0].message.content
                         questions = _parse_json_array(content_text)

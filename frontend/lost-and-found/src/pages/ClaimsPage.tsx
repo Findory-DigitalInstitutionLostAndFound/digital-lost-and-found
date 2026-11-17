@@ -2,16 +2,21 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Check, ChevronDown, ChevronUp, Image, MessageSquare, Send, ShieldAlert, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { claimsService, type ClaimDetail } from '../services/claimMessageService';
-import { createClient } from '@supabase/supabase-js/dist/index.cjs';
+import { createClient } from '@supabase/supabase-js';
+import { QRCodeSVG } from 'qrcode.react';
+import { QrScanner } from './QrScanner';
+import { handOverService } from '../services/handOverService';
+import { setupRealtime } from '../services/chatTokenService';
 
 type ClaimTab = 'mine' | 'incoming' | 'archived';
 
 interface ClaimsPageProps {
   navigate: (page: string) => void;
   user?: { name: string; email: string; phone: string; user_id: string } | null;
+  refreshCounts?: () => void;
 }
 
-export function ClaimsPage({ user }: ClaimsPageProps) {
+export function ClaimsPage({ user, refreshCounts }: ClaimsPageProps) {
   const currentUserId = user?.user_id ?? 'user-current';
  
   const [claimantClaims, setClaimantClaims] = useState<ClaimDetail[]>([]);
@@ -22,6 +27,7 @@ export function ClaimsPage({ user }: ClaimsPageProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   // fetch claim on mount
   const fetchClaimsData = async (showLoader = true) => {
@@ -50,12 +56,12 @@ export function ClaimsPage({ user }: ClaimsPageProps) {
   //filter claims by acttive tab
   const visibleClaims = useMemo(() => {
     if (tab === 'archived'){
-      return allClaims.filter(c => c.status === 'approved' || c.status === 'rejected' || c.status === 'cancelled');
+      return allClaims.filter(c => c.status === 'handover_completed' || c.status === 'rejected' || c.status === 'cancelled');
     }
     if (tab === 'incoming') {
-      return founderClaims.filter(c => c.status === 'pending');
+      return founderClaims.filter(c => c.status === 'pending' || c.status === 'approved');
     }
-    return claimantClaims.filter(c => c.status === 'pending');
+    return claimantClaims.filter(c => c.status === 'pending' || c.status === 'approved');
   }, [allClaims, tab, claimantClaims, founderClaims]);
 
   const selectedClaim = allClaims.find(claim => claim.id === selectedId);
@@ -69,12 +75,16 @@ export function ClaimsPage({ user }: ClaimsPageProps) {
 
   const handleStatusChange = async (claimId: string, newStatus: string) => {
     try {
+      setIsUpdatingStatus(true);
+      console.log('updating satus');
       // Call backend API to update status
       await claimsService.updateClaimStatus(claimId, newStatus);
       // Refresh claims list
       await fetchClaimsData();
     } catch (err) {
       console.error(`Failed to update status to ${newStatus}:`, err);
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -82,32 +92,71 @@ export function ClaimsPage({ user }: ClaimsPageProps) {
   useEffect(() => {
     if (!selectedId) return;
 
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseAnonKey) return;
+    let channel: ReturnType<ReturnType<typeof createClient>["channel"]> | null = null;
+    let supabase: ReturnType<typeof createClient> | null = null;
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-    const channel = supabase
-      .channel(`claim-chat-${selectedId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'claim_messages',
-          filter: `claim_id=eq.${selectedId}`,
-        },
-        () => {
-          // Silently fetch fresh claims data when a new message comes in via Realtime
-          fetchClaimsData(false);
+    const startRealTime = async () => {
+      try {
+        const accessToken = await setupRealtime();
+        console.log("Access token:", accessToken);
+        console.log("Token starts with:", accessToken?.substring(0, 20));
+        if (!accessToken) {
+          return;
         }
-      )
-      .subscribe();
 
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+        if (!supabaseUrl || !supabaseAnonKey) {
+          return;
+        }
+
+        //create supabase client with the access token
+        supabase = createClient(supabaseUrl, supabaseAnonKey, {
+          global: {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          },
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false,
+          },
+        });
+
+        await supabase.realtime.setAuth(accessToken);
+
+        //subscribe to new messages
+        channel = supabase
+          .channel(`claim-chat-${selectedId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'claim_messages',
+              filter: `claim_id=eq.${selectedId}`,
+            },
+            (payload) => {
+              console.log('New message received via Realtime:', payload);
+              // Silently fetch fresh claims data when a new message comes in via Realtime
+              fetchClaimsData(false);
+            }
+          )
+          .subscribe((status) => {
+            console.log('Realtime subscription status:', status);
+          });
+      } catch (error) {
+        console.error('Error setting up Realtime subscription:', error);
+      }
+    }
+    startRealTime();
+    
     return () => {
-      supabase.removeChannel(channel);
+      if (channel && supabase) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [selectedId]);
 
@@ -164,7 +213,13 @@ export function ClaimsPage({ user }: ClaimsPageProps) {
           </span>
         </div>
 
-        {visibleClaims.length === 0 ? (
+        {isLoading ? (
+          <div className="px-8 py-20 text-center border-b border-[#0E0D0B]/10">
+            <p className="font-mono text-xs text-[#0E0D0B]/60 uppercase tracking-widest">
+              Loading claims…
+            </p>
+          </div>
+        ) : visibleClaims.length === 0 ? (
           <div className="px-8 py-20 text-center border-b border-[#0E0D0B]/10">
             <MessageSquare size={28} className="mx-auto text-[#0E0D0B]/30 mb-4" />
             <p className="font-mono text-xs text-[#0E0D0B]/60 uppercase tracking-widest">
@@ -191,7 +246,8 @@ export function ClaimsPage({ user }: ClaimsPageProps) {
                     setMessage('');
                     if (claim.is_unread) {
                       claimsService.markClaimAsRead(claim.id);
-                      claim.is_unread = false; // Update the local state 
+                      claim.is_unread = false; 
+                      refreshCounts?.(); // Immediately updates the global header/sidebar counter!
                     }
                   }}
                     className={`w-full text-left grid md:grid-cols-[minmax(0,1.5fr)_minmax(10rem,0.65fr)_minmax(11rem,0.7fr)_2rem] gap-4 md:gap-5 items-center px-6 md:px-8 py-4 border-b border-[#0E0D0B]/10 transition-colors ${
@@ -248,6 +304,8 @@ export function ClaimsPage({ user }: ClaimsPageProps) {
           onMessageChange={setMessage}
           onSend={submitMessage}
           onStatusChange={status => handleStatusChange(selectedClaim.id, status)}
+          onRefresh={() => fetchClaimsData(false)} 
+          isUpdatingStatus={isUpdatingStatus}
         />
       )}
     </div>
@@ -292,7 +350,7 @@ function ClaimStatus({ status }: { status: string }) {
   );
 }
 
-function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange, imageFile, onImageChange, onSend, onStatusChange }: {
+function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange, imageFile, onImageChange, onSend, onStatusChange, onRefresh, isUpdatingStatus }: {
   claim: ClaimDetail;
   currentUserId: string;
   tab: ClaimTab;
@@ -302,8 +360,145 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
   onImageChange: (file: File | null) => void;
   onSend: () => void;
   onStatusChange: (status: 'approved' | 'rejected' | 'cancelled') => void;
+  onRefresh: () => void;
+  isUpdatingStatus: boolean;
 }) {
   const isPending = claim.status === 'pending';
+  const isApproved = claim.status === 'approved';
+  const isHighValue = Boolean(claim.item?.is_high_valued);
+
+  // Found person = owner side = "incoming" tab
+  const isFoundPerson = tab === 'incoming';
+
+  // Local form state
+  const [meetupLocation, setMeetupLocation] = useState(
+    claim.meetup_location ?? (isHighValue ? 'Campus service point' : '')
+  );
+  const [meetupTime, setMeetupTime] = useState(
+    claim.meetup_time ? claim.meetup_time.slice(0, 16) : ''
+  );
+  const [isSavingMeetup, setIsSavingMeetup] = useState(false);
+  const [isAcceptingMeetup, setIsAcceptingMeetup] = useState(false);
+
+  const [qrPayload, setQrPayload] = useState<string | null>(null);
+  const [qrExpiresAt, setQrExpiresAt] = useState<string | null>(null);
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
+  
+  const [scanInput, setScanInput] = useState('');
+  const [isVerifyingQr, setIsVerifyingQr] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+
+  // Keep form in sync when claim data refreshes
+  useEffect(() => {
+    setMeetupLocation(
+      claim.meetup_location ?? (isHighValue ? 'Campus service point' : '')
+    );
+    setMeetupTime(claim.meetup_time ? claim.meetup_time.slice(0, 16) : '');
+  }, [claim.meetup_location, claim.meetup_time, isHighValue]);
+
+  const hasProposal = Boolean(claim.meetup_location && claim.meetup_time);
+  const bothAccepted =
+    Boolean(claim.owner_accepted_meetup) &&
+    Boolean(claim.claimant_accepted_meetup);
+
+  // Found person must suggest first
+  const canProposeFirst = isFoundPerson && !hasProposal;
+  // Anyone can counter if there is a proposal and meetup not fully agreed
+  const canCounter = hasProposal && !bothAccepted;
+  // Accept if there is a proposal and this side has not accepted yet
+  const iAmOwner = isFoundPerson;
+  const iAlreadyAccepted = iAmOwner
+    ? Boolean(claim.owner_accepted_meetup)
+    : Boolean(claim.claimant_accepted_meetup);
+  const canAccept = hasProposal && !bothAccepted && !iAlreadyAccepted;
+  
+  // Detect if the form values have changed from the current proposal
+  const savedTimeLocal = claim.meetup_time ? claim.meetup_time.slice(0, 16) : '';
+  const savedLocation = claim.meetup_location ?? '';
+
+  const proposalChanged = isHighValue
+    ? meetupTime !== savedTimeLocal
+    : meetupLocation.trim() !== savedLocation.trim() || meetupTime !== savedTimeLocal;
+
+  const saveProposal = async () => {
+    if (hasProposal && !proposalChanged) {
+      alert('Change the place or time before sending a new proposal.');
+      return;
+    }
+    const location = isHighValue
+      ? 'Campus service point'
+      : meetupLocation.trim();
+
+    if (!location || !meetupTime) {
+      alert('Please set place and time.');
+      return;
+    }
+
+    try {
+      setIsSavingMeetup(true);
+      await claimsService.updateMeetupDetails({
+        claimId: claim.id,
+        location: location,
+        time: meetupTime
+      });
+      onRefresh();
+    } catch (err) {
+      console.error(err);
+      alert('Could not save meetup proposal.');
+    } finally {
+      setIsSavingMeetup(false);
+    }
+  };
+
+  const acceptProposal = async () => {
+    try {
+      setIsAcceptingMeetup(true);
+      await claimsService.acceptMeetup(claim.id);
+      onRefresh();
+    } catch (err) {
+      console.error(err);
+      alert('Could not accept meetup.');
+    } finally {
+      setIsAcceptingMeetup(false);
+    }
+  };
+
+  // function to generate QR code for handover
+  const handleGenerateQr = async () => {
+    try {
+      setIsGeneratingQr(true);
+      const data = await handOverService.generateQr(claim.id);
+      setQrPayload(data.qr_payload);
+      setQrExpiresAt(data.expires_at);
+    } catch (err) {
+      console.error(err);
+      alert('Could not generate QR code.');
+    } finally {
+      setIsGeneratingQr(false);
+    }
+  };
+
+  // function to verify QR code and complete handover
+  const handleVerifyQr = async () => {
+    const value = scanInput.trim();
+    if (!value) {
+      alert('Scan or paste the QR code first.');
+      return;
+    }
+    try {
+      setIsVerifyingQr(true);
+      await handOverService.verifyQr(claim.id, value);
+      alert('Handover completed successfully.');
+      setShowScanner(false);
+      setScanInput('');
+      onRefresh();
+    } catch (err) {
+      console.error(err);
+      alert('QR verification failed. Check the code has not expired.');
+    } finally {
+      setIsVerifyingQr(false);
+    }
+  };
 
   return (
     <section className="border-t-4 border-[#0E0D0B] bg-[#FAF6EC]">
@@ -375,7 +570,214 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
             </div>
           );
         })}
+
+        {/* MEETUP FORM (only after approve)*/}
+        {isApproved && (
+          <div className="mt-6 border border-[#0E0D0B]/20 bg-white p-4 space-y-3 max-w-xl">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[#0E0D0B]/60">
+                Arrange meetup
+            </p>
+
+            {bothAccepted ? (
+              <div className="space-y-2">
+                <p className="text-sm text-[#06C167] font-medium">
+                  Meetup agreed: {claim.meetup_location} ·{' '}
+                  {claim.meetup_time
+                    ? claim.meetup_time.slice(0, 16).replace('T', ' ')
+                    : ''}
+                </p>
+
+                {isHighValue && !isFoundPerson && (
+                  <p className="text-xs text-[#0E0D0B]/70">
+                    Remember to bring your ID card. Staff at the service point may check it.
+                  </p>
+                )}
+
+                {/* ========== CLAIMANT: generate QR ========== */}
+                {!isFoundPerson && (
+                  <div className="space-y-2 border border-[#0E0D0B]/15 p-3">
+                    <p className="font-mono text-[10px] uppercase tracking-widest text-[#0E0D0B]/60">
+                      Handover QR
+                    </p>
+                    <p className="text-xs text-[#0E0D0B]/70">
+                      Generate a QR when you meet. It expires quickly — refresh if needed.
+                    </p>
+
+                    <Button onClick={handleGenerateQr} disabled={isGeneratingQr}>
+                      {isGeneratingQr
+                        ? 'Generating…'
+                        : qrPayload
+                          ? 'Refresh QR'
+                          : 'Generate QR'}
+                    </Button>
+
+                    {isGeneratingQr && (
+                      <p className="text-xs text-[#0E0D0B]/50">Creating secure token…</p>
+                    )}
+
+                    {qrPayload && !isGeneratingQr && (
+                      <div className="flex flex-col items-start gap-2 pt-2">
+                        <QRCodeSVG value={qrPayload} size={180} />
+                        <p className="font-mono text-[10px] text-[#0E0D0B]/60">
+                          Valid until{' '}
+                          {qrExpiresAt
+                            ? new Date(qrExpiresAt).toLocaleString('fi-FI', {
+                                timeZone: 'Europe/Helsinki',
+                              })
+                            : '—'}
+                        </p>
+                        <p className="text-[10px] text-[#0E0D0B]/50 break-all max-w-xs">
+                          {qrPayload}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ========== FOUND PERSON: scan or paste ========== */}
+                {isFoundPerson && (
+                  <div className="space-y-2 border border-[#0E0D0B]/15 p-3">
+                    <p className="font-mono text-[10px] uppercase tracking-widest text-[#0E0D0B]/60">
+                      Verify claimant
+                    </p>
+                    <p className="text-xs text-[#0E0D0B]/70">
+                      Scan the claimant&apos;s QR or paste the code. Do not hand over the
+                      item until verification succeeds.
+                    </p>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => setShowScanner(s => !s)}
+                        disabled={isVerifyingQr}
+                      >
+                        {showScanner ? 'Hide camera' : 'Open camera scanner'}
+                      </Button>
+                    </div>
+
+                    {showScanner && (
+                      <QrScanner
+                        onScan={(text) => {
+                          setScanInput(text);
+                          setShowScanner(false);
+                        }}
+                        onError={(msg) => {
+                          console.error(msg);
+                          alert('Camera unavailable. Paste the QR text instead.');
+                          setShowScanner(false);
+                        }}
+                      />
+                    )}
+
+                    <input
+                      value={scanInput}
+                      onChange={e => setScanInput(e.target.value)}
+                      placeholder="Paste QR value (findory:handover:...)"
+                      className="w-full h-10 px-3 text-sm border border-[#0E0D0B]/20 bg-white"
+                    />
+
+                    <Button
+                      variant="found"
+                      onClick={handleVerifyQr}
+                      disabled={isVerifyingQr || !scanInput.trim()}
+                    >
+                      {isVerifyingQr ? 'Verifying…' : 'Verify QR & complete handover'}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                {/*place */}
+                <div>
+                  <label className= "font-mono text-[10px] uppercase block mb-1">
+                    Place
+                  </label>
+                  <input
+                    value={isHighValue ? 'Campus service point' : meetupLocation}
+                    onChange={e => setMeetupLocation(e.target.value)}
+                    disabled={isHighValue || (!canProposeFirst && !canCounter)}
+                    placeholder="e.g. Library lobby, Room 101"
+                    className="w-full h-10 px-3 text-sm border border-[#0E0D0B]/20 bg-white disabled:bg-[#0E0D0B]/5"
+                  />
+                  {isHighValue && (
+                    <p className="mt-1 font-mono text-[10px] text-[#D93B2B]">
+                        High-value item: campus service point only.
+                      </p>
+                  )}
+                </div>
+
+                {/* Time */}
+                <div>
+                  <label className="font-mono text-[10px] uppercase block mb-1">
+                    Date & time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={meetupTime}
+                    onChange={e => setMeetupTime(e.target.value)}
+                    disabled={!canProposeFirst && !canCounter}
+                    className="w-full h-10 px-3 text-sm border border-[#0E0D0B]/20 bg-white disabled:bg-[#0E0D0B]/5"
+                  />
+                </div>
+
+                {/* Current proposal summary */}
+                {hasProposal && (
+                  <p className="text-xs text-[#0E0D0B]/70">
+                    Current proposal: <strong>{claim.meetup_location}</strong> at{' '}
+                    <strong>
+                      {claim.meetup_time
+                        ? claim.meetup_time.slice(0, 16).replace('T', ' ')
+                        : '—'}
+                    </strong>
+                  </p>
+                )}
+                {/* Who accepted */}
+                <p className="font-mono text-[10px] text-[#0E0D0B]/60">
+                  Found person:{' '}
+                  {claim.owner_accepted_meetup ? 'accepted' : 'waiting'} ·
+                  Claimant:{' '}
+                  {claim.claimant_accepted_meetup ? 'accepted' : 'waiting'}
+                </p>
+
+                {/* Buttons */}
+                <div className="flex flex-wrap gap-2">
+                  {/* First suggestion – only found person */}
+                  {canProposeFirst && (
+                    <Button onClick={saveProposal} disabled={isSavingMeetup}> {isSavingMeetup ? 'Suggesting...' : 'Suggest meetup'}</Button>
+                  )}
+
+                  {/* Counter – either side when not yet fully agreed */}
+                  {canCounter && (
+                    <Button onClick={saveProposal} disabled={!proposalChanged || isSavingMeetup}> {isSavingMeetup ? 'Suggesting...' : 'Suggest different '}</Button>
+                  )}
+
+                  {/* Accept current proposal */}
+                  {canAccept && (
+                    <Button variant="found" onClick={acceptProposal} disabled={isAcceptingMeetup || isSavingMeetup}>
+                      <Check size={14} /> {isAcceptingMeetup ? 'Accepting...' : 'Accept this meetup'}
+                    </Button>
+                  )}
+
+                  {/* Waiting states */}
+                  {!hasProposal && !isFoundPerson && (
+                    <p className="text-xs text-[#0E0D0B]/60">
+                      Waiting for the found person to suggest place and time.
+                    </p>
+                  )}
+                  {hasProposal && iAlreadyAccepted && !bothAccepted && (
+                    <p className="text-xs text-[#0E0D0B]/60">
+                      Waiting for the other person to accept.
+                    </p>
+                    )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
+
+      
 
       <div className="border-t border-[#0E0D0B]/10 bg-[#FAF6EC] p-5 md:px-8">
         {isPending && tab !== 'archived' ? (
@@ -418,19 +820,23 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
 
             {tab === 'incoming' ? (
               <div className="flex gap-3">
-                <Button variant="found" onClick={() => onStatusChange('approved')} className="font-mono text-xs uppercase">
-                  <Check size={14} /> Approve claim
+                <Button variant="found" disabled={isUpdatingStatus} onClick={() => onStatusChange('approved')} className="font-mono text-xs uppercase">
+                  <Check size={14} /> {isUpdatingStatus ? 'Approving...' : 'Approve claim'}
                 </Button>
-                <Button variant="danger" onClick={() => onStatusChange('rejected')} className="font-mono text-xs uppercase">
-                  <X size={14} /> Reject
+                <Button variant="danger" disabled={isUpdatingStatus} onClick={() => onStatusChange('rejected')} className="font-mono text-xs uppercase">
+                  <X size={14} /> {isUpdatingStatus ? 'Rejecting...' : 'Reject claim'}
                 </Button>
               </div>
             ) : (
-              <Button variant="danger" onClick={() => onStatusChange('cancelled')} className="font-mono text-xs uppercase">
-                <X size={14} /> Cancel claim
+              <Button variant="danger" disabled={isUpdatingStatus} onClick={() => onStatusChange('cancelled')} className="font-mono text-xs uppercase">
+                <X size={14} /> {isUpdatingStatus ? 'Cancelling...' : 'Cancel claim'}
               </Button>
             )}
           </>
+        ) : isApproved ? (
+          <p className="font-mono text-[10px] text-[#0E0D0B]/60 uppercase tracking-widest">
+            Verification closed. Use the meetup form above to agree place and time.
+          </p>
         ) : (
           <p className="font-mono text-[10px] text-[#0E0D0B]/60 uppercase tracking-widest">
             This claim is {claim.status}. The conversation is now read-only.
