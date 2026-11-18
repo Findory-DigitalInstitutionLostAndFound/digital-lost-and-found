@@ -371,6 +371,9 @@ export function ReportItemPage({ mode, navigate, isGuest = false }: Props) {
             <label className="font-mono text-[10px] text-[#0E0D0B] uppercase tracking-widest block mb-1.5">
               Photo <span className="text-[#0E0D0B]/65 normal-case">(optional)</span>
             </label>
+            <p className="font-mono text-[9px] text-[#0E0D0B]/60 mb-2">
+              Note: Avoid uploading sensitive personal documents (such as ID numbers, passports or serial numbers). Images are automatically scanned and redacted.
+            </p>
             {imagePreview ? (
               <div className="relative border border-[#0E0D0B]/20 overflow-hidden">
                 <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover" />
