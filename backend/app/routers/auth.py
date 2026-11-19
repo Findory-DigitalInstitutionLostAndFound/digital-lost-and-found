@@ -78,3 +78,12 @@ async def reset_password(payload: ResetPasswordSchema):
     # Call auth service to handle reset password logic
     AuthService.reset_user_password(payload.new_password, payload.access_token)
     return {"message": "Password has been reset successfully."}
+
+@router.post("/delete-account")
+# Handle account deletion request
+async def delete_account(response: Response, user: dict = Depends(get_current_user)):
+    user_id = user.get("sub")
+    result = AuthService.delete_user_account(user_id)
+    # Clear the access token cookie after account deletion
+    response.delete_cookie("access_token")
+    return result

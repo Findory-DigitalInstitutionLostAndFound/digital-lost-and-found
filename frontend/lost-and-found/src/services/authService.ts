@@ -34,6 +34,12 @@ export type ResetPasswordData = {
     new_password: string;
 };
 
+export type DeleteAccountResponse = {
+    status: string;
+    message: string;
+    deletion_date: string;
+};
+
 export const authService = {
     // Function to register a new user
     async userRegister(data: RegisterData): Promise<MessageResponse> {
@@ -88,6 +94,12 @@ export const authService = {
     // Function to handle reset password
     async resetPassword(data: ResetPasswordData): Promise<MessageResponse> {
         const response = await api.post<MessageResponse>('/auth/reset-password', data);
+        return response.data;
+    },
+
+    //function to delete user account
+    async deleteUserAccount(): Promise<DeleteAccountResponse> {
+        const response = await api.post<DeleteAccountResponse>('/auth/delete-account');
         return response.data;
     }
 

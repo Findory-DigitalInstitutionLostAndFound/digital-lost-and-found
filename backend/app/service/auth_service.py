@@ -1,9 +1,12 @@
 from fastapi import HTTPException
 from app.core.config import supabase
+from app.core.supabase_admin import get_admin_supabase_client
 from datetime import datetime, timezone, timedelta
 
 # Allowed university email domains
 ALLOWED_DOMAINS = ("@students.oamk.fi", "@oamk.fi", "@student.oulu.fi", "@oulu.fi")
+RETENTION_DAYS = 30  # Number of days after which the account will be deleted
+
 
 class AuthService:
     @staticmethod
@@ -82,6 +85,24 @@ class AuthService:
         if res.user.email_confirmed_at is None:
             raise HTTPException(status_code=401, detail="No account found with this email. Please register first.")
 
+        #check if the account is staged to deteletion
+        admin_supabase = get_admin_supabase_client()
+        profile = (
+            admin_supabase.table("profiles")
+            .select("account_status, deletion_scheduled_at")
+            .eq("id", res.user.id)
+            .limit(1)
+            .execute()
+        )
+
+        if profile.data:
+            profile_data = profile.data[0]
+            if profile_data.get("account_status") == "pending_deletion":
+                scheduled_deletion_date = profile_data.get("deletion_scheduled_at").split("T")[0]
+                raise HTTPException(
+                    status_code=403, 
+                    detail=f"This account is deactivated and scheduled for permanent deletion on {scheduled_deletion_date}."
+                )
         return res.session.access_token
 
     @staticmethod
@@ -171,3 +192,63 @@ class AuthService:
                 status_code=400, 
                 detail="Invalid or expired access token. Please request a new password reset link."
             )
+
+    @staticmethod
+    def delete_user_account(user_id: str):
+        now = datetime.now(timezone.utc)
+        cutoff_date = ( now - timedelta(days=RETENTION_DAYS)).isoformat()
+        admin_supabase = get_admin_supabase_client()
+
+        # First check if user has any active or pending claims
+        active_claims = (admin_supabase.table("claims")
+            .select("id, status")
+            .eq("claimant_user_id", user_id)
+            .in_("status", ["pending", "approved"])
+            .execute()
+        )
+
+        if active_claims.data:
+            raise HTTPException(
+                status_code=400, 
+                detail="Cannot delete account with active or pending claims. Please resolve or cancel your claims first."
+            )
+
+        # If no active claims, check for recently completed claims within the retention period
+        recent_completed_claims = (admin_supabase.table("claims")
+            .select("id, updated_at")
+            .eq("claimant_user_id", user_id)
+            .eq("status", "handover_completed")
+            .gte("updated_at", cutoff_date)
+            .order("updated_at", desc=True) 
+            .limit(1) 
+            .execute()
+        )
+
+        # If a recent handover exsists, schedule delayed deletion
+        if recent_completed_claims.data:
+            latest_handover_str = recent_completed_claims.data[0].get("updated_at")
+            latest_handover_date = datetime.fromisoformat(latest_handover_str.replace("Z", "+00:00"))
+            deletion_date = latest_handover_date + timedelta(days=RETENTION_DAYS)
+
+            # Update the user's account status to "pending_deletion" and set the deletion date in profile table
+            admin_supabase.table("profiles").update({
+                "account_status": "pending_deletion",
+                "deletion_scheduled_at": deletion_date.isoformat()
+            }).eq("id", user_id).execute()
+
+            return {
+                "status": "scheduled_deletion",
+                "message": "Your account has been deactivated and scheduled for permanent deletion after the 30-day handover dispute window.",
+                "deletion_date": deletion_date.isoformat()
+            }
+
+        # If no recent handovers, delete the user account immediately
+        try:
+            admin_supabase.auth.admin.delete_user(user_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to delete user account: {str(e)}")
+        return {
+            "status": "deleted",
+            "message": "Your account has been permanently deleted.",
+            "deletion_date": now.isoformat()
+        }

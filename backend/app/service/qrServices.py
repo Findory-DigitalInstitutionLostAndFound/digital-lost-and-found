@@ -105,11 +105,14 @@ class QrService:
 
             if item_id:
                 (supabase.table("items")
-                .update({"status": "claimed"})
+                .update({
+                    "status": "resolved",
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                })
                 .eq("id", item_id)
                 .execute()
                 )
-                
+
             return updated.data[0]
 
         except HTTPException:

@@ -94,12 +94,11 @@ export function ClaimsPage({ user, refreshCounts }: ClaimsPageProps) {
 
     let channel: ReturnType<ReturnType<typeof createClient>["channel"]> | null = null;
     let supabase: ReturnType<typeof createClient> | null = null;
+    let accessToken: string | null = null;
 
     const startRealTime = async () => {
       try {
-        const accessToken = await setupRealtime();
-        console.log("Access token:", accessToken);
-        console.log("Token starts with:", accessToken?.substring(0, 20));
+        accessToken = await setupRealtime();
         if (!accessToken) {
           return;
         }
@@ -157,6 +156,9 @@ export function ClaimsPage({ user, refreshCounts }: ClaimsPageProps) {
       if (channel && supabase) {
         supabase.removeChannel(channel);
       }
+      supabase = null;
+      channel = null;
+      accessToken = null;
     };
   }, [selectedId]);
 
@@ -702,7 +704,7 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
                   />
                   {isHighValue && (
                     <p className="mt-1 font-mono text-[10px] text-[#D93B2B]">
-                        High-value item: campus service point only.
+                        High-Value Item: Handover is strictly limited to the Campus Service Point. Please verify the claimant's ID with a staff member before releasing the item. Do not hand it to a third party.
                       </p>
                   )}
                 </div>
