@@ -704,7 +704,7 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
                   />
                   {isHighValue && (
                     <p className="mt-1 font-mono text-[10px] text-[#D93B2B]">
-                        High-value item: campus service point only.
+                        High-Value Item: Handover is strictly limited to the Campus Service Point. Please verify the claimant's ID with a staff member before releasing the item. Do not hand it to a third party.
                       </p>
                   )}
                 </div>
