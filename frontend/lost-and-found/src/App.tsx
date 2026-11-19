@@ -7,6 +7,7 @@ import { Dashboard } from './pages/Dashboard'
 import { MatchesPage } from './pages/MatchesPage'
 import { ReportItemPage } from './pages/ReportItemPage'
 import { ClaimsPage } from './pages/ClaimsPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { Sidebar } from './components/layout/Sidebar'
 import { Header } from './components/layout/Header'
 import { ThemeProvider } from './components/context/ThemeProvider'
@@ -18,12 +19,12 @@ import './index.css'
 import { GuestPage } from './pages/GuestPage'
 
 
-type Page = 'dashboard' | 'home' | 'browse' | 'login' | 'register' | 'matches' | 'report-lost' | 'report-found' | 'guest' | 'claims'
+type Page = 'dashboard' | 'home' | 'browse' | 'login' | 'register' | 'matches' | 'report-lost' | 'report-found' | 'guest' | 'claims' | 'profile'
 
 function AppContent() {
   const getInitialPage = (): Page => {
     const path = window.location.pathname.replace('/', '') as Page
-    const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest', 'claims']
+    const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest', 'claims', 'profile']
     return validPages.includes(path) ? path : 'home'
   }
   
@@ -38,7 +39,7 @@ function AppContent() {
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname.replace('/', '') as Page
-      const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest', 'claims']
+      const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest', 'claims', 'profile']
       if (validPages.includes(path)) {
         setCurrentPage(path)
       } else {
@@ -116,6 +117,21 @@ function AppContent() {
     }
   }
 
+  // Function to handle account deletion
+  const handleDeleteAccount = async () => {
+  try {
+    await authService.deleteUserAccount()
+    try {
+      await authService.userLogout()
+    } catch {
+    }
+    setUser(null)
+    navigate('home')
+  } catch (err) {
+    console.error('Failed to delete account:', err)
+  }
+}
+
   // Show loading screen while checking session
   if (isLoading) {
     return (
@@ -153,6 +169,14 @@ function AppContent() {
         return <ReportItemPage mode="lost" navigate={navigate} isGuest={!user}/>
       case 'report-found':
         return <ReportItemPage mode="found" navigate={navigate} isGuest={false}/>
+      case 'profile':
+        return (
+          <ProfilePage
+            user={user}
+            navigate={navigate}
+            onDeleteAccount={handleDeleteAccount}
+          />
+        )
       case 'login':
         return <LoginPage 
           navigate={navigate} 
