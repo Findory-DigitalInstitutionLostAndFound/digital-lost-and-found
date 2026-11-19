@@ -249,5 +249,6 @@ class AuthService:
             raise HTTPException(status_code=500, detail=f"Failed to delete user account: {str(e)}")
         return {
             "status": "deleted",
-            "message": "Your account has been permanently deleted."
+            "message": "Your account has been permanently deleted.",
+            "deletion_date": now.isoformat()
         }
