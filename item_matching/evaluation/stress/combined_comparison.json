@@ -1,0 +1,33 @@
+{
+  "notes": [
+    "Existing development dataset; not held-out validation.",
+    "Text cutoff 70 determines eligibility; combined ranking cannot add rejected pairs.",
+    "Image-only ranking includes all date-valid image pairs, so candidate sets differ.",
+    "Rank fusion weights are heuristic and were not selected by optimizing this report."
+  ],
+  "text_weight": 0.75,
+  "rank_constant": 60,
+  "text_only": {
+    "hit_at_1": 1.0,
+    "hit_at_3": 1.0,
+    "hit_at_5": 1.0
+  },
+  "image_only": {
+    "hit_at_1": 0.9167,
+    "hit_at_3": 0.9792,
+    "hit_at_5": 1.0
+  },
+  "combined": {
+    "hit_at_1": 1.0,
+    "hit_at_3": 1.0,
+    "hit_at_5": 1.0
+  },
+  "all_images_missing": {
+    "hit_at_1": 1.0,
+    "hit_at_3": 1.0,
+    "hit_at_5": 1.0
+  },
+  "eligible_pairs": 52,
+  "combined_pairs": 52,
+  "available_image_pairs": 52
+}

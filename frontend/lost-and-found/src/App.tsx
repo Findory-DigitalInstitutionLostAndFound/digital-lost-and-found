@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Homepage } from './pages/Homepage'
 import { BrowsePage } from './pages/BrowsePage'
 import { RegisterPage } from './pages/RegisterPage'
 import { LoginPage } from './pages/LoginPage'
 import { Dashboard } from './pages/Dashboard'
 import { MatchesPage } from './pages/MatchesPage'
+import { useMatches } from './hooks/useMatches'
 import { ReportItemPage } from './pages/ReportItemPage'
 import { ClaimsPage } from './pages/ClaimsPage'
 import { ProfilePage } from './pages/ProfilePage'
@@ -30,12 +31,13 @@ function AppContent() {
   
   const [currentPage, setCurrentPage] = useState<Page>(getInitialPage())
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
-  const [pendingMatchesCount] = useState<number>(1)
   const [pendingClaimsCount, setPendingClaimsCount] = useState<number>(0)
 
   // Start with user as null, will be set after login or registration
   const [user, setUser] = useState<{ name: string; email: string; phone: string; user_id: string } | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const matching = useMatches(user?.user_id)
+  const pendingMatchesCount = matching.pendingCount
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname.replace('/', '') as Page
@@ -160,7 +162,7 @@ function AppContent() {
       case 'browse':
         return <BrowsePage {...pageProps} />
       case 'matches':
-        return <MatchesPage {...pageProps} />
+        return <MatchesPage controller={matching} />
       case 'guest':
         return <GuestPage {...pageProps} />
       case 'claims':

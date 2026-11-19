@@ -1,0 +1,4 @@
+# Optional local multilingual semantic matcher; no API key is required.
+# The first run downloads the pretrained model from Hugging Face.
+torch
+transformers>=5.0,<6

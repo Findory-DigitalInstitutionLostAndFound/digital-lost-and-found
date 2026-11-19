@@ -25,7 +25,7 @@ export function Sidebar({
   navigate,
   user = null,
   logout = () => alert('Signed out successfully'),
-  pendingMatchesCount = 1,
+  pendingMatchesCount = 0,
   pendingClaimsCount = 1,
 }: SidebarProps) {
   const [open, setOpen] = useState(false)

@@ -166,9 +166,10 @@ export function RegisterPage({ navigate }: RegisterPageProps) {
 
                 <button
                   type="submit"
+                  disabled={loading}
                   className="w-full h-11 mt-4 bg-[#D93B2B] text-[#FAF6EC] mono text-xs uppercase tracking-widest font-bold hover:bg-[#BF3323] transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  Create Account →
+                  {loading ? 'Creating account…' : 'Create Account →'}
                 </button>
               </form>
           )}
