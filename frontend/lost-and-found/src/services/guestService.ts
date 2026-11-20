@@ -17,4 +17,14 @@ export const guestService = {
         const response = await api.get<UserInfo>('/guest/current-user', { withCredentials: true });
             return response.data;
     },
+
+    //Function to logout user
+    async logout(): Promise<{ message: string }> {
+        const response = await api.post(
+        '/guest/logout',
+        {},
+        { withCredentials: true }
+        )
+        return response.data
+    },
 }

@@ -162,3 +162,14 @@ async def get_guest_current_user(
         "item_id": item["id"],
         "role": "guest"
     }
+
+@router.post("/guest/logout")
+async def guest_logout(response: Response):
+    # Clear the guest session cookie
+    response.delete_cookie(
+        key=GUEST_COOKIE_NAME,
+        path="/",
+        samesite="lax",
+        secure=True 
+    )
+    return {"message": "Guest logged out successfully"}
