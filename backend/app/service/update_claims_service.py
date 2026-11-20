@@ -3,6 +3,13 @@ from app.core.supabase_user import get_user_supabase_client
 from datetime import datetime, timezone
 import uuid
 
+ALLOWED_CAMPUS_SERVICE_POINTS = {
+    "Linnanmaa Campus - Oamk Designated Lost & Found Point",
+    "Linnanmaa Campus - University of Oulu Designated Lost & Found Point",
+    "Kontinkangas Campus - Oamk Designated Lost & Found Point",
+    "Kontinkangas Campus - University of Oulu Designated Lost & Found Point",
+}
+
 class UpdateClaimsService:
     @staticmethod
     def _get_roles(claim: dict, item: dict, actor: dict) -> tuple[bool, bool]:
@@ -196,16 +203,13 @@ class UpdateClaimsService:
                 detail="The found person must suggest the first meetup place and time.",
             )
 
-        # If the item is high-value, the location is fixed to the campus service point
-        is_high_value = bool(item.get("is_high_valued"))
-        CAMPUS_POINT = "Campus service point"
+        # check if meetup location is provided and not empty and time is provided
+        if not meetup_location or not meetup_location.strip():
+            raise HTTPException(status_code=400, detail="Meetup location is required.")
 
-        if is_high_value:
-            location = CAMPUS_POINT
-        else:
-            location = (meetup_location or "").strip()
-            if not location:
-                raise HTTPException(status_code=400, detail="Meetup location is required.")
+        location = meetup_location.strip()
+        if location not in ALLOWED_CAMPUS_SERVICE_POINTS:
+            raise HTTPException(status_code=400, detail="Invalid meetup location.")
 
         if not meetup_time or not str(meetup_time).strip():
             raise HTTPException(status_code=400, detail="Meetup time is required.")
