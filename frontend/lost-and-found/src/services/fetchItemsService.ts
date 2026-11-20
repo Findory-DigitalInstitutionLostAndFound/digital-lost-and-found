@@ -1,5 +1,7 @@
 import {api} from "./api";
 import { authService } from "./authService";
+import { guestService } from "./guestService";
+import type { UserInfo } from "./authService";
 
 export type Item = {
     id: string;
@@ -23,17 +25,38 @@ export const fetchItemsService = {
 
     // Filters items to only return those created by the logged-in user
     async fetchMyItems(): Promise<Item[]> {
-        const [itemsResponse, currentUser] = await Promise.all([
-            api.get<{ items: Item[] }>('/items'),
-            authService.getCurrentUser()
-        ]);
+        const itemsResponse = await api.get<{ items: Item[] }>('/items');
+        const allItems = itemsResponse.data.items ?? [];
 
-        if (!currentUser?.user_id) {
-            return [];
+        let currentUser: UserInfo | null = null;
+        try {
+            currentUser = await authService.getCurrentUser();
+        } catch {
+            currentUser = null;
         }
 
-        return itemsResponse.data.items.filter(
-            (item) => item.user_id === currentUser.user_id
-        );
+        if (currentUser?.role === 'guest') {
+            return allItems.filter(
+                (item) =>
+                    item.item_type === 'lost' &&
+                    (item.id === currentUser?.item_id || item.guest_id === currentUser?.user_id)
+            );
+        }
+
+        if (currentUser?.user_id) {
+            return allItems.filter((item) => item.user_id === currentUser.user_id);
+        }
+
+        // Fallback if /auth/me failed and user wasn't returned above
+        try {
+            const guestUser = await guestService.getCurrentUser();
+            return allItems.filter(
+                (item) =>
+                    item.item_type === 'lost' &&
+                    (item.id === guestUser?.item_id || item.guest_id === guestUser?.user_id)
+            );
+        } catch {
+            return [];
+        }
     }
 }
