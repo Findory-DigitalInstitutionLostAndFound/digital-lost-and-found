@@ -4,12 +4,15 @@ from app.core.supabase_user import get_user_supabase_client
 
 class QrService:
     @staticmethod
-    async def update_claim_qr(claim_id: str, user_id: str, qr_token: str, expires_at: str, access_token: str):
+    async def update_claim_qr(claim_id: str, actor: dict, qr_token: str, expires_at: str):
         try:
-            supabase = get_user_supabase_client(access_token)
+            supabase = actor["supabase"]
+            auth_type = actor["auth_type"]
+            actor_id = actor["actor_id"]
+
             claim_res = (
                 supabase.table("claims")
-                .select("*, items(user_id)")
+                .select("*, items(user_id, guest_id)")
                 .eq("id", claim_id)
                 .execute()
             )
@@ -19,12 +22,19 @@ class QrService:
             claim = claim_res.data[0]
 
             # only the claimant generate the qr
-            if claim.get("claimant_user_id") != user_id:
+            is_claimant = (
+                claim.get("claimant_guest_id") == actor_id
+                if auth_type == "guest"
+                else claim.get("claimant_user_id") == actor_id
+            )
+            if not is_claimant:
                 raise HTTPException(status_code=403, detail="You are not authorized to generate QR for this claim")
+
             if claim.get("status") != "approved":
                 raise HTTPException(status_code=400, detail="Claim is not approved yet")
             if not claim.get("owner_accepted_meetup") or not claim.get("claimant_accepted_meetup"):
                 raise HTTPException(status_code=400, detail="Both parties must accept the meetup before generating QR code")
+            
             updated = (
                 supabase.table("claims")
                 .update(
@@ -48,16 +58,18 @@ class QrService:
     @staticmethod
     async def verify_and_complete_handover(
         claim_id: str, 
-        user_id: str,
-        scanned_token: str,
-        access_token: str
+        actor: dict ,
+        scanned_token: str
     ):
         try:
-            supabase = get_user_supabase_client(access_token)
+            supabase = actor["supabase"]
+            auth_type = actor["auth_type"]
+            actor_id = actor["actor_id"]
+
             # fetch claim with it's items
             claim_res = (
                 supabase.table("claims")
-                .select("*, items(user_id)")
+                .select("*, items(user_id, guest_id)")
                 .eq("id", claim_id)
                 .execute()
             )
@@ -66,10 +78,17 @@ class QrService:
                 raise HTTPException(status_code=404, detail="Claim not found")
             claim = claim_res.data[0]
 
+
             # only the owner can verify the qr
-            item_owner_id = claim.get("items", {}).get("user_id")
+            item_owner_id = (
+                claim.get("items", {}).get("guest_id") == actor_id
+                if auth_type == "guest"
+                else claim.get("items", {}).get("user_id") == actor_id
+            )
+            is_owner = item_owner_id
             item_id = claim.get("item_id")
-            if item_owner_id != user_id:
+            
+            if not is_owner:
                 raise HTTPException(status_code=403, detail="Only the founder who posted the item can verify the QR code for this claim")
             if claim.get("status") != "approved":
                 raise HTTPException(status_code=400, detail="Claim must be in approved status to verify QR code")

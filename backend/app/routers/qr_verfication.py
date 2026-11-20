@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from app.api.deps import get_current_user
 from app.service.qrServices import QrService
 from app.schemas.claim_schema import QRVerifyRequest
+from app.api.claim_auth import resolve_claim_actor
 
 router = APIRouter()
 # route to generate QR code for a approved claim
@@ -11,14 +12,9 @@ router = APIRouter()
 async def generate_qr_code(
     claim_id: str, 
     request: Request,
-    current_user: dict = Depends(get_current_user)
 ): 
-    access_token = request.cookies.get("access_token")
-    user_id = current_user.get("sub")
-
-    if not access_token or not user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    
+    actor = await resolve_claim_actor(request)
+ 
     # Generate QR code logic 
     secure_token = secrets.token_urlsafe(32)
     # Set expiration time for the QR code
@@ -26,11 +22,10 @@ async def generate_qr_code(
 
     result = await QrService.update_claim_qr(
         claim_id=claim_id, 
-        user_id=user_id,
+        actor=actor,
         qr_token=secure_token,
         expires_at=expires_at.isoformat(), 
-        access_token=access_token)
-
+    )
     if not result:
         raise HTTPException(status_code=500, detail="Failed to save QR token.")
     
@@ -48,19 +43,14 @@ async def verify_qr_code(
     claim_id: str, 
     payload: QRVerifyRequest,
     request: Request,
-    current_user: dict = Depends(get_current_user)
 ):
-    access_token = request.cookies.get("access_token")
-    user_id = current_user.get("sub")
-
-    if not access_token or not user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
+    actor = await resolve_claim_actor(request)
+    
     # Extract the QR payload from the request
     token_to_verify = payload.qr_payload
 
     # Split the payload and extract the token
-    raw = payload.qr_payload.strip()
+    raw = token_to_verify.strip()
     prefix = f"findory:handover:{claim_id}:"
     if raw.startswith(prefix):
         token_to_verify = raw[len(prefix):]
@@ -72,9 +62,8 @@ async def verify_qr_code(
     # Verify the QR code logic
     result = await QrService.verify_and_complete_handover(
         claim_id=claim_id,
-        user_id=user_id,
-        scanned_token=token_to_verify,
-        access_token=access_token
+        actor=actor,
+        scanned_token=token_to_verify
     )
 
     if not result:

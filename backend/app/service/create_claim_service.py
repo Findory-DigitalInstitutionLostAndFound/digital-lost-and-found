@@ -1,5 +1,4 @@
-from fastapi import HTTPException, types, BackgroundTasks
-from app.core.supabase_user import get_user_supabase_client
+from fastapi import HTTPException, BackgroundTasks
 from app.core.supabase_admin import get_admin_supabase_client
 import json
 import base64
@@ -21,14 +20,15 @@ class CreateClaimService:
     @staticmethod
     async def process_claim(
         item_id: str, 
-        access_token: str, 
-        user_id: str, 
+        actor: dict, 
         gemini_client, 
         openrouter_client,
         background_tasks: BackgroundTasks
     ) -> dict:
         try:
-            supabase = get_user_supabase_client(access_token)
+            supabase = actor["supabase"]
+            auth_type = actor["auth_type"]
+            actor_id = actor["actor_id"]  
 
             # Fetch item details from the database
             item_response = supabase.table("items").select("*").eq("id", item_id).execute()
@@ -38,14 +38,21 @@ class CreateClaimService:
             item = item_response.data[0]
 
             #Prevent user claiming their own published item
-            if item.get("user_id") == user_id:
-               raise HTTPException(status_code=400, detail="You cannot claim your own item.")
+            if auth_type == "user" and item.get("user_id") == actor_id:
+                raise HTTPException(status_code=400, detail="You cannot claim your own item.")
+            if auth_type == "guest" and item.get("guest_id") == actor_id:
+                raise HTTPException(status_code=400, detail="You cannot claim your own item.")
 
             # prevent duplicate claims by the same user
-            exsisting_claim = supabase.table("claims").select("id").eq("item_id", item_id).eq("claimant_user_id", user_id).eq("status", "pending").execute()
-            if exsisting_claim.data:
-                raise HTTPException(status_code=400, detail="You have already have an active claim for this item.")
+            dup_query = supabase.table("claims").select("id").eq("item_id", item_id).eq("status", "pending")
+            if auth_type == "user":
+                dup_query = dup_query.eq("claimant_user_id", actor_id)
+            else:
+                dup_query = dup_query.eq("claimant_guest_id", actor_id)
 
+            if dup_query.execute().data:
+                raise HTTPException(status_code=400, detail="You already have an active claim for this item.")
+            
             # Get current UTC time for last read timestamps
             current_time = datetime.now(timezone.utc).isoformat()
 
@@ -53,8 +60,8 @@ class CreateClaimService:
             claim_data = {
                 "item_id": item_id,
                 "status": "pending",
-                "claimant_user_id": user_id,
-                "claimant_guest_id": None,
+                "claimant_user_id": actor_id if auth_type == "user" else None,
+                "claimant_guest_id": actor_id if auth_type == "guest" else None,
                 "owner_last_read_at": current_time, # mark current time as last read for the owner
                 "claimant_last_read_at": current_time, # mark current time as last read for the claimant
             }
@@ -69,7 +76,6 @@ class CreateClaimService:
                 CreateClaimService._background_generate_verification_questions,
                 item=item,
                 claim_id=claim_id,
-                access_token=access_token,
                 gemini_client=gemini_client,
                 openrouter_client=openrouter_client
             )
@@ -90,7 +96,6 @@ class CreateClaimService:
     async def _background_generate_verification_questions(
         item: dict, 
         claim_id: str, 
-        access_token: str, 
         gemini_client, 
         openrouter_client
     ):
@@ -98,10 +103,10 @@ class CreateClaimService:
             admin_supabase = get_admin_supabase_client()
             # Generate verification questions using AI
             questions = await CreateClaimService.generate_verification_questions(
-                item, 
-                access_token, 
-                gemini_client, 
-                openrouter_client
+                item = item, 
+                supabase = admin_supabase,
+                gemini_client = gemini_client,
+                openrouter_client = openrouter_client
             )
 
             # format and save questions to claim_messages table
@@ -112,7 +117,7 @@ class CreateClaimService:
             message_data = {
                 "claim_id": claim_id,
                 "sender_user_id": item.get("user_id"),  
-                "sender_guest_id": None,
+                "sender_guest_id": item.get("guest_id"),
                 "content": formatted_message
             }
 
@@ -122,8 +127,7 @@ class CreateClaimService:
 
     # Generate verification questions using AI models
     @staticmethod
-    async def generate_verification_questions(item: dict, access_token: str, gemini_client, openrouter_client)-> list:
-        supabase = get_user_supabase_client(access_token)
+    async def generate_verification_questions(item: dict, supabase, gemini_client, openrouter_client)-> list:
         
         # Get item details
         item_title = item.get("title", "")

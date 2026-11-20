@@ -4,27 +4,20 @@ from app.service.fetch_claims_details_service import FetchClaimsDetailsService
 from app.service.update_claims_service import UpdateClaimsService
 from app.schemas.claim_schema import StatusUpdateSchema, MeetupUpdateSchema
 from typing import Optional
+from app.api.claim_auth import resolve_claim_actor
 
 router = APIRouter()
 
 # Endpoint to fetch claims for the current user
 @router.get("/claims")
-async def get_claims(request: Request, current_user: dict = Depends(get_current_user)):
-    # get access token from the request cookies
-    token = request.cookies.get("access_token")
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated. Access token is missing.")
-
-    # get user id
-    user_id = current_user.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=400, detail="User ID is required.")
-
+async def get_claims(request: Request):
+    actor = await resolve_claim_actor(request)
+    
     # Fetch claims( if the current user is the claiment)
-    claims_as_claimant = await FetchClaimsDetailsService.fetch_claims_details_as_claimant(user_id, token)
+    claims_as_claimant = await FetchClaimsDetailsService.fetch_claims_details_as_claimant(actor)
 
     # Fetch claims( if the current user is the founder)
-    claims_as_founder = await FetchClaimsDetailsService.fetch_claims_details_as_founder(user_id, token)
+    claims_as_founder = await FetchClaimsDetailsService.fetch_claims_details_as_founder(actor)
 
     return {
         "claims_as_claimant": claims_as_claimant,
@@ -36,11 +29,10 @@ async def get_claims(request: Request, current_user: dict = Depends(get_current_
 async def update_last_read(
     claim_id: str, 
     request: Request,
-    current_user: dict = Depends(get_current_user)
 ):
-    access_token = request.cookies.get("access_token")
+    actor = await resolve_claim_actor(request)
     try:
-        await UpdateClaimsService.update_last_read_time(claim_id, current_user.get("sub"), access_token)
+        await UpdateClaimsService.update_last_read_time(claim_id, actor)
         return {"status": "success", "message": "Last read time updated successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -50,17 +42,11 @@ async def update_last_read(
 async def update_claim_status(
     claim_id: str,
     payload: StatusUpdateSchema,
-    request: Request,
-    current_user: dict = Depends(get_current_user)
+    request: Request
 ):
-    access_token = request.cookies.get("access_token")
-    user_id = current_user.get("sub")
-
-    if not access_token or not user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated. Access token or user ID is missing.")
-
+    actor = await resolve_claim_actor(request)
     try:
-        updated_claim = await UpdateClaimsService.update_claim_status(claim_id, user_id, payload.status, access_token)
+        updated_claim = await UpdateClaimsService.update_claim_status(claim_id, actor, payload.status)
         return {"status": "success", "data": updated_claim}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -72,28 +58,22 @@ async def send_message(
     content: str = Form(...),
     image: Optional[UploadFile] = File(None),   
     request: Request = None,
-    current_user: dict = Depends(get_current_user)
 ):
-    access_token = request.cookies.get("access_token")
-    user_id = current_user.get("sub")
-
-    if not access_token or not user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated. Access token or user ID is missing.")
-
+    actor = await resolve_claim_actor(request)
+    
     image_url = None
     # if there is a image, it will be uploaded first
     try:
         if image:
             # Upload the image and get the URL
-            image_upload_result = await UpdateClaimsService.upload_message_image(image, access_token)
+            image_upload_result = await UpdateClaimsService.upload_message_image(image, actor["supabase"])
             image_url = image_upload_result.get("public_url")
     
         message_data = await UpdateClaimsService.send_message(
-            claim_id, 
-            user_id, 
-            content, 
-            image_url, 
-            access_token
+            claim_id = claim_id, 
+            content = content, 
+            image_url = image_url, 
+            actor = actor
         )
         return {"status": "success", "data": message_data}
     except HTTPException as http_exc:
@@ -107,21 +87,15 @@ async def update_meetup(
     claim_id: str,
     payload: MeetupUpdateSchema,
     request: Request,
-    current_user: dict = Depends(get_current_user),
 ):
-    access_token = request.cookies.get("access_token")
-    user_id = current_user.get("sub")
-
-    if not access_token or not user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated.")
-
+    actor = await resolve_claim_actor(request)
+    
     try:
         updated = await UpdateClaimsService.update_meetup(
             claim_id=claim_id,
-            user_id=user_id,
             meetup_location=payload.location,
             meetup_time=payload.time,
-            access_token=access_token,
+            actor=actor,
         )
         return {"status": "success", "data": updated}
     except HTTPException:
@@ -135,19 +109,13 @@ async def update_meetup(
 async def accept_meetup(
     claim_id: str,
     request: Request,
-    current_user: dict = Depends(get_current_user),
 ):
-    access_token = request.cookies.get("access_token")
-    user_id = current_user.get("sub")
-
-    if not access_token or not user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated.")
+    actor = await resolve_claim_actor(request)
 
     try:
         updated = await UpdateClaimsService.accept_meetup(
             claim_id=claim_id,
-            user_id=user_id,
-            access_token=access_token,
+            actor=actor
         )
         return {"status": "success", "data": updated}
     except HTTPException:
