@@ -8,6 +8,7 @@ from datetime import datetime, timezone, timedelta
 # Initialize Supabase admin/service role client for unauthenticated/guest actions
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+GUEST_COOKIE_NAME = "guest_session"
 
 def get_admin_supabase() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
@@ -59,8 +60,8 @@ class GuestItemsService:
                 created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
                 now = datetime.now(timezone.utc)
                 
-                # Enforce 3-week expiration window
-                if now - created_at > timedelta(days=21):
+                # Enforce 10-day expiration window
+                if now - created_at > timedelta(days=10):
                     raise HTTPException(status_code=403, detail="This guest access link has expired.")
             
             return item
@@ -101,3 +102,21 @@ class GuestItemsService:
         except Exception as e:
             print(f"Error details: {str(e)}")
             raise HTTPException(status_code=500, detail="An error occurred while uploading the guest cleaned image.")
+
+    @staticmethod
+    def get_guest_and_item_by_token(guest_match_token: str):
+        item = GuestItemsService.verify_guest_token(guest_match_token)
+        guest_id = item.get("guest_id")
+        if not guest_id:
+            raise HTTPException(status_code=404, detail="Guest information not found for this item.")
+        supabase = get_admin_supabase()
+        guest_res = (
+            supabase.table("guests")
+            .select("*")
+            .eq("id", guest_id)
+            .limit(1)
+            .execute()
+        )
+        if not guest_res.data:
+            raise HTTPException(status_code=404, detail="Guest information not found.")
+        return guest_res.data[0], item

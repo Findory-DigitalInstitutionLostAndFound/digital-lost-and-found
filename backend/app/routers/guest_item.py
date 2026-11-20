@@ -1,13 +1,28 @@
-from fastapi import APIRouter, Request, HTTPException, Form, UploadFile, File, BackgroundTasks
+from fastapi import APIRouter, Cookie, Request, HTTPException, Form, Response, UploadFile, File, BackgroundTasks
+from pydantic import BaseModel
 from app.schemas.items_schema import ItemCreateSchema
 from app.service.gemini_upload_text_analysis import analyze_text_for_sensitive_data
-from app.service.guest_items_service import GuestItemsService
+from app.service.guest_items_service import GuestItemsService, GUEST_COOKIE_NAME
 from app.service.image_redaction_service import redact_sensitive_areas
 from typing import Optional
 import uuid
 from app.service.guest_emai_service import send_guest_match_email
 
 router = APIRouter()
+
+class GuestTokenVerifyRequest(BaseModel):
+    token: str
+    
+def set_guest_cookie(response, token: str):
+    response.set_cookie(
+        key=GUEST_COOKIE_NAME,
+        value=token,
+        httponly=True, # Make true so it can not be accessed by JavaScript
+        secure=True,  # True in production to ensure cookies are sent over HTTPS
+        samesite="lax", #
+        max_age=3600,  # 1 hour
+        path="/" # Set the cookie for the entire domain
+    )
 
 @router.post("/guest/create-item")
 async def create_guest_item(
@@ -98,7 +113,7 @@ async def create_guest_item(
     saved_item = GuestItemsService.save_guest_item(item_data, guest_info)
 
     # Queue email dispatch in background
-    match_link = f"http://localhost:5173/guest/matches?token={guest_match_token}"
+    match_link = f"http://localhost:5173/dashboard#access_token={guest_match_token}&type=guest_match"
     background_tasks.add_task(
         send_guest_match_email,
         email=guest_email.strip(),
@@ -113,3 +128,37 @@ async def create_guest_item(
         "message": "Guest report submitted successfully! Check your email for your match link."
     }
 
+@router.post("/guest/verify-email-confirmation")
+async def verify_guest_email_confirmation(payload: GuestTokenVerifyRequest, response: Response):
+    token = payload.token.strip()
+    if not token:
+        raise HTTPException(status_code=400, detail="Token is required.")
+
+    
+    guest, item = GuestItemsService.get_guest_and_item_by_token(token)
+    set_guest_cookie(response, token)
+
+    return {
+        "status": "success", 
+        "message": "Email confirmation verified.",
+        "user_id": guest.get("id"),
+        "item_id": item.get("id"),
+    }
+
+@router.get("/guest/current-user")
+async def get_guest_current_user(
+    guest_session: Optional[str] = Cookie(default=None, alias=GUEST_COOKIE_NAME)
+):
+    if not guest_session:
+        raise HTTPException(status_code=401, detail="Not authenticated as a guest.")
+
+    guest, item = GuestItemsService.get_guest_and_item_by_token(guest_session)
+
+    return {
+        "user_id": guest["id"],
+        "email": guest["email"],
+        "name": guest["full_name"],
+        "phone": guest.get("phone") or "",
+        "item_id": item["id"],
+        "role": "guest"
+    }
