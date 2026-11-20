@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Search, X } from 'lucide-react'
 import { ItemCard } from '../components/ui/ItemCard'
 import type { Item } from '../components/ui/ItemCard'

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Eye, EyeOff, User } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { Navbar } from '../components/ui/Navbar'
 import { authService, type UserInfo } from '../services/authService'
 import { validatePassword, isPasswordValid } from '../utils/passwordValidation'

@@ -12,3 +12,5 @@ Pillow==12.3.0
 presidio-analyzer==2.2.364
 google-genai==2.31.0
 openai==3.31.0
+# Local multilingual matching (model weights downloaded on first use)
+-r ../item_matching/requirements-semantic.txt

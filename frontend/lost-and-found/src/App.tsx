@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Homepage } from './pages/Homepage'
 import { BrowsePage } from './pages/BrowsePage'
 import { RegisterPage } from './pages/RegisterPage'
 import { LoginPage } from './pages/LoginPage'
 import { Dashboard } from './pages/Dashboard'
 import { MatchesPage } from './pages/MatchesPage'
+import { useMatches } from './hooks/useMatches'
 import { ReportItemPage } from './pages/ReportItemPage'
 import { ClaimsPage } from './pages/ClaimsPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { Sidebar } from './components/layout/Sidebar'
 import { Header } from './components/layout/Header'
 import { ThemeProvider } from './components/context/ThemeProvider'
@@ -18,27 +20,28 @@ import './index.css'
 import { GuestPage } from './pages/GuestPage'
 
 
-type Page = 'dashboard' | 'home' | 'browse' | 'login' | 'register' | 'matches' | 'report-lost' | 'report-found' | 'guest' | 'claims'
+type Page = 'dashboard' | 'home' | 'browse' | 'login' | 'register' | 'matches' | 'report-lost' | 'report-found' | 'guest' | 'claims' | 'profile'
 
 function AppContent() {
   const getInitialPage = (): Page => {
     const path = window.location.pathname.replace('/', '') as Page
-    const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest', 'claims']
+    const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest', 'claims', 'profile']
     return validPages.includes(path) ? path : 'home'
   }
   
   const [currentPage, setCurrentPage] = useState<Page>(getInitialPage())
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
-  const [pendingMatchesCount] = useState<number>(1)
   const [pendingClaimsCount, setPendingClaimsCount] = useState<number>(0)
 
   // Start with user as null, will be set after login or registration
   const [user, setUser] = useState<{ name: string; email: string; phone: string; user_id: string } | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const matching = useMatches(user?.user_id)
+  const pendingMatchesCount = matching.pendingCount
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname.replace('/', '') as Page
-      const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest', 'claims']
+      const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest', 'claims', 'profile']
       if (validPages.includes(path)) {
         setCurrentPage(path)
       } else {
@@ -116,6 +119,21 @@ function AppContent() {
     }
   }
 
+  // Function to handle account deletion
+  const handleDeleteAccount = async () => {
+  try {
+    await authService.deleteUserAccount()
+    try {
+      await authService.userLogout()
+    } catch {
+    }
+    setUser(null)
+    navigate('home')
+  } catch (err) {
+    console.error('Failed to delete account:', err)
+  }
+}
+
   // Show loading screen while checking session
   if (isLoading) {
     return (
@@ -144,7 +162,7 @@ function AppContent() {
       case 'browse':
         return <BrowsePage {...pageProps} />
       case 'matches':
-        return <MatchesPage {...pageProps} />
+        return <MatchesPage controller={matching} />
       case 'guest':
         return <GuestPage {...pageProps} />
       case 'claims':
@@ -153,6 +171,14 @@ function AppContent() {
         return <ReportItemPage mode="lost" navigate={navigate} isGuest={!user}/>
       case 'report-found':
         return <ReportItemPage mode="found" navigate={navigate} isGuest={false}/>
+      case 'profile':
+        return (
+          <ProfilePage
+            user={user}
+            navigate={navigate}
+            onDeleteAccount={handleDeleteAccount}
+          />
+        )
       case 'login':
         return <LoginPage 
           navigate={navigate} 

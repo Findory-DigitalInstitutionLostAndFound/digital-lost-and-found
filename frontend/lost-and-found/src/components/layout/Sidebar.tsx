@@ -6,6 +6,7 @@ const MOCK_NAV = [
   { label: 'Browse', page: 'browse', stamp: '02' },
   { label: 'Matches', page: 'matches', stamp: '03' },
   { label: 'Claims', page: 'claims', stamp: '04' },
+  { label: 'Profile', page: 'profile', stamp: '05' },
   { label: 'Report Lost', page: 'report-lost' },
   { label: 'Report Found', page: 'report-found' },
 ]
@@ -24,7 +25,7 @@ export function Sidebar({
   navigate,
   user = null,
   logout = () => alert('Signed out successfully'),
-  pendingMatchesCount = 1,
+  pendingMatchesCount = 0,
   pendingClaimsCount = 1,
 }: SidebarProps) {
   const [open, setOpen] = useState(false)

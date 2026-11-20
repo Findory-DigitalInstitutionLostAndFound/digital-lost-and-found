@@ -1,0 +1,442 @@
+{
+  "notes": [
+    "Threshold metrics assume unlisted pairs are negatives (closed-world assumption); annotations are not exhaustive.",
+    "Ranking ties use found_item_id; synthetic stress cases are diagnostic, not an independent validation set."
+  ],
+  "text": {
+    "pairs": 2299,
+    "thresholds": [
+      {
+        "threshold": 50,
+        "tp": 48,
+        "fp": 11,
+        "fn": 0,
+        "precision": 0.8136,
+        "recall": 1.0,
+        "f1": 0.8972
+      },
+      {
+        "threshold": 60,
+        "tp": 48,
+        "fp": 5,
+        "fn": 0,
+        "precision": 0.9057,
+        "recall": 1.0,
+        "f1": 0.9505
+      },
+      {
+        "threshold": 70,
+        "tp": 48,
+        "fp": 1,
+        "fn": 0,
+        "precision": 0.9796,
+        "recall": 1.0,
+        "f1": 0.9897
+      },
+      {
+        "threshold": 75,
+        "tp": 47,
+        "fp": 0,
+        "fn": 1,
+        "precision": 1.0,
+        "recall": 0.9792,
+        "f1": 0.9895
+      },
+      {
+        "threshold": 80,
+        "tp": 46,
+        "fp": 0,
+        "fn": 2,
+        "precision": 1.0,
+        "recall": 0.9583,
+        "f1": 0.9787
+      },
+      {
+        "threshold": 85,
+        "tp": 44,
+        "fp": 0,
+        "fn": 4,
+        "precision": 1.0,
+        "recall": 0.9167,
+        "f1": 0.9565
+      },
+      {
+        "threshold": 90,
+        "tp": 33,
+        "fp": 0,
+        "fn": 15,
+        "precision": 1.0,
+        "recall": 0.6875,
+        "f1": 0.8148
+      }
+    ],
+    "ranking": {
+      "hit_at_1": 1.0,
+      "hit_at_3": 1.0,
+      "hit_at_5": 1.0
+    }
+  },
+  "text_stress": [
+    {
+      "id": "paraphrase-wallet",
+      "metadata": "description_only",
+      "expected_match": true,
+      "score": 61,
+      "predicted_match": false,
+      "passed": false
+    },
+    {
+      "id": "paraphrase-wallet",
+      "metadata": "original_title_tags",
+      "expected_match": true,
+      "score": 75,
+      "predicted_match": true,
+      "passed": true
+    },
+    {
+      "id": "paraphrase-keys",
+      "metadata": "description_only",
+      "expected_match": true,
+      "score": 52,
+      "predicted_match": false,
+      "passed": false
+    },
+    {
+      "id": "paraphrase-keys",
+      "metadata": "original_title_tags",
+      "expected_match": true,
+      "score": 67,
+      "predicted_match": false,
+      "passed": false
+    },
+    {
+      "id": "typos-backpack",
+      "metadata": "description_only",
+      "expected_match": true,
+      "score": 73,
+      "predicted_match": true,
+      "passed": true
+    },
+    {
+      "id": "typos-backpack",
+      "metadata": "original_title_tags",
+      "expected_match": true,
+      "score": 86,
+      "predicted_match": true,
+      "passed": true
+    },
+    {
+      "id": "finnish-wallet",
+      "metadata": "description_only",
+      "expected_match": true,
+      "score": 62,
+      "predicted_match": false,
+      "passed": false
+    },
+    {
+      "id": "finnish-wallet",
+      "metadata": "original_title_tags",
+      "expected_match": true,
+      "score": 78,
+      "predicted_match": true,
+      "passed": true
+    },
+    {
+      "id": "word-order-laptop",
+      "metadata": "description_only",
+      "expected_match": true,
+      "score": 59,
+      "predicted_match": false,
+      "passed": false
+    },
+    {
+      "id": "word-order-laptop",
+      "metadata": "original_title_tags",
+      "expected_match": true,
+      "score": 71,
+      "predicted_match": true,
+      "passed": true
+    },
+    {
+      "id": "sparse-phone",
+      "metadata": "description_only",
+      "expected_match": true,
+      "score": 67,
+      "predicted_match": false,
+      "passed": false
+    },
+    {
+      "id": "sparse-phone",
+      "metadata": "original_title_tags",
+      "expected_match": true,
+      "score": 85,
+      "predicted_match": true,
+      "passed": true
+    },
+    {
+      "id": "negated-wallet-detail",
+      "metadata": "description_only",
+      "expected_match": false,
+      "score": 81,
+      "predicted_match": true,
+      "passed": false
+    },
+    {
+      "id": "negated-wallet-detail",
+      "metadata": "original_title_tags",
+      "expected_match": false,
+      "score": 87,
+      "predicted_match": true,
+      "passed": false
+    },
+    {
+      "id": "negated-key-count",
+      "metadata": "description_only",
+      "expected_match": false,
+      "score": 56,
+      "predicted_match": false,
+      "passed": true
+    },
+    {
+      "id": "negated-key-count",
+      "metadata": "original_title_tags",
+      "expected_match": false,
+      "score": 71,
+      "predicted_match": true,
+      "passed": false
+    },
+    {
+      "id": "conflicting-laptop-size",
+      "metadata": "description_only",
+      "expected_match": false,
+      "score": 86,
+      "predicted_match": true,
+      "passed": false
+    },
+    {
+      "id": "conflicting-laptop-size",
+      "metadata": "original_title_tags",
+      "expected_match": false,
+      "score": 89,
+      "predicted_match": true,
+      "passed": false
+    },
+    {
+      "id": "wrong-backpack-colour",
+      "metadata": "description_only",
+      "expected_match": false,
+      "score": 79,
+      "predicted_match": true,
+      "passed": false
+    },
+    {
+      "id": "wrong-backpack-colour",
+      "metadata": "original_title_tags",
+      "expected_match": false,
+      "score": 88,
+      "predicted_match": true,
+      "passed": false
+    },
+    {
+      "id": "unrelated-same-context",
+      "metadata": "description_only",
+      "expected_match": false,
+      "score": 62,
+      "predicted_match": false,
+      "passed": true
+    },
+    {
+      "id": "unrelated-same-context",
+      "metadata": "original_title_tags",
+      "expected_match": false,
+      "score": 79,
+      "predicted_match": true,
+      "passed": false
+    },
+    {
+      "id": "boilerplate-wallet",
+      "metadata": "description_only",
+      "expected_match": true,
+      "score": 56,
+      "predicted_match": false,
+      "passed": false
+    },
+    {
+      "id": "boilerplate-wallet",
+      "metadata": "original_title_tags",
+      "expected_match": true,
+      "score": 69,
+      "predicted_match": false,
+      "passed": false
+    }
+  ],
+  "saved_image": {
+    "thresholds": [
+      {
+        "threshold": 0.7,
+        "tp": 47,
+        "fp": 294,
+        "fn": 1,
+        "precision": 0.1378,
+        "recall": 0.9792,
+        "f1": 0.2416
+      },
+      {
+        "threshold": 0.75,
+        "tp": 46,
+        "fp": 114,
+        "fn": 2,
+        "precision": 0.2875,
+        "recall": 0.9583,
+        "f1": 0.4423
+      },
+      {
+        "threshold": 0.8,
+        "tp": 41,
+        "fp": 41,
+        "fn": 7,
+        "precision": 0.5,
+        "recall": 0.8542,
+        "f1": 0.6308
+      },
+      {
+        "threshold": 0.85,
+        "tp": 33,
+        "fp": 12,
+        "fn": 15,
+        "precision": 0.7333,
+        "recall": 0.6875,
+        "f1": 0.7097
+      },
+      {
+        "threshold": 0.9,
+        "tp": 19,
+        "fp": 3,
+        "fn": 29,
+        "precision": 0.8636,
+        "recall": 0.3958,
+        "f1": 0.5429
+      },
+      {
+        "threshold": 0.95,
+        "tp": 5,
+        "fp": 0,
+        "fn": 43,
+        "precision": 1.0,
+        "recall": 0.1042,
+        "f1": 0.1887
+      }
+    ],
+    "ranking": {
+      "hit_at_1": 0.9167,
+      "hit_at_3": 0.9792,
+      "hit_at_5": 1.0
+    }
+  },
+  "image_coverage": {
+    "lost": 48,
+    "found": 68,
+    "missing": []
+  },
+  "image_duplicates": [],
+  "corrupt_images": [],
+  "text_errors": {
+    "highest_false_positives": [
+      {
+        "lost_item_id": "lost-040",
+        "found_item_id": "found-069",
+        "score": 70,
+        "category_score": 20,
+        "location_score": 15,
+        "date_score": 0,
+        "text_score": 35,
+        "text_similarity": 0.691
+      }
+    ],
+    "missed_pairs": []
+  },
+  "image_errors": {
+    "highest_false_positives": [
+      {
+        "lost_item_id": "lost-041",
+        "found_item_id": "found-057",
+        "cosine_similarity": 0.916718
+      },
+      {
+        "lost_item_id": "lost-038",
+        "found_item_id": "found-068",
+        "cosine_similarity": 0.901443
+      },
+      {
+        "lost_item_id": "lost-022",
+        "found_item_id": "found-067",
+        "cosine_similarity": 0.901047
+      },
+      {
+        "lost_item_id": "lost-027",
+        "found_item_id": "found-044",
+        "cosine_similarity": 0.89233
+      },
+      {
+        "lost_item_id": "lost-040",
+        "found_item_id": "found-069",
+        "cosine_similarity": 0.882806
+      },
+      {
+        "lost_item_id": "lost-026",
+        "found_item_id": "found-063",
+        "cosine_similarity": 0.859878
+      },
+      {
+        "lost_item_id": "lost-014",
+        "found_item_id": "found-013",
+        "cosine_similarity": 0.859356
+      },
+      {
+        "lost_item_id": "lost-044",
+        "found_item_id": "found-063",
+        "cosine_similarity": 0.859286
+      },
+      {
+        "lost_item_id": "lost-036",
+        "found_item_id": "found-035",
+        "cosine_similarity": 0.85453
+      },
+      {
+        "lost_item_id": "lost-033",
+        "found_item_id": "found-061",
+        "cosine_similarity": 0.853544
+      }
+    ],
+    "missed_pairs": [
+      [
+        "lost-005",
+        "found-005"
+      ],
+      [
+        "lost-006",
+        "found-006"
+      ],
+      [
+        "lost-008",
+        "found-008"
+      ],
+      [
+        "lost-016",
+        "found-016"
+      ],
+      [
+        "lost-032",
+        "found-032"
+      ],
+      [
+        "lost-042",
+        "found-042"
+      ],
+      [
+        "lost-046",
+        "found-046"
+      ]
+    ]
+  }
+}

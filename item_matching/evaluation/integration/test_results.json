@@ -1,0 +1,26 @@
+{
+  "verification_date": "2026-11-17",
+  "git_head": "a830aa820e8c29e1b1d232670e7844f3a1270016",
+  "uncommitted_changes": true,
+  "python": {
+    "tests": 94,
+    "failures": 0,
+    "errors": 0
+  },
+  "ui": {
+    "tests": 11,
+    "passed": 11,
+    "failed": 0
+  },
+  "frontend_build": "passed; large chunk warning",
+  "real_semantic_smoke": "corresponding laptop accepted; conflicting screen size below threshold",
+  "signed_in_supabase_e2e": "not performed; no real claims or test database writes",
+  "source_sha256": {
+    "backend/app/service/live_matching_service.py": "e7cc80e46404cbc1ab2bf87689d7e7d85c67aa8d2ba22408dc90f6ce5a3c006e",
+    "backend/app/service/matching_service.py": "5af2ebf1deb96eee4fb13640f166a0859c634175df8ff88df05dedebd52fd00f",
+    "backend/app/routers/matches.py": "4b80282243d379ecccaa13efcb478f7bd2823eadef6314c527446c3016e29ce0",
+    "frontend/lost-and-found/src/hooks/useMatches.ts": "afdb45f1f257a227e3c5a3bd23fe5285ff64de731c1e8ad5faf52cf92120c066",
+    "frontend/lost-and-found/src/pages/MatchesPage.tsx": "a9853e556568a473412b4a9c3d124875adc82fdea808f42705517868cecb02a2",
+    "frontend/lost-and-found/src/App.tsx": "a5281397adbed38e6a0969bd331c1fa5871631298d3e1976c898d01a189001a6"
+  }
+}

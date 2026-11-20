@@ -1,0 +1,9 @@
+{
+  "test": "actual CLIP inference through live image scoring",
+  "storage_download": "mocked with local dataset image bytes",
+  "database_writes": false,
+  "status": "available",
+  "cosine": 0.905616,
+  "evidence": "text+image",
+  "missing_image_fallback": "passed"
+}

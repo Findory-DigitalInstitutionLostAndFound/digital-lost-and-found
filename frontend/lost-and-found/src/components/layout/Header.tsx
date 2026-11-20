@@ -11,7 +11,7 @@ interface HeaderProps {
 export function Header({
   currentPage,
   navigate,
-  pendingMatchesCount = 1,
+  pendingMatchesCount = 0,
   pendingClaimsCount = 1,
   title,
 }: HeaderProps) {

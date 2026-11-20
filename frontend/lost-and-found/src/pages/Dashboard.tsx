@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { PlusCircle, Search, Package, Loader2 } from 'lucide-react';
 import { fetchItemsService } from '../services/fetchItemsService';
 import type { Item } from '../services/fetchItemsService';

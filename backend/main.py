@@ -1,3 +1,4 @@
+from app.routers.matches import router as matches_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers.auth import router as auth_router
@@ -29,6 +30,7 @@ app.add_middleware(
 
 # include auth router
 app.include_router(auth_router)
+app.include_router(matches_router)
 # include found item router
 app.include_router(create_item_router)
 # include guest item router 
