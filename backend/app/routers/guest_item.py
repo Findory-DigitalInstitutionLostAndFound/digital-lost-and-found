@@ -5,6 +5,7 @@ from app.service.guest_items_service import GuestItemsService
 from app.service.image_redaction_service import redact_sensitive_areas
 from typing import Optional
 import uuid
+from app.service.guest_emai_service import send_guest_match_email
 
 router = APIRouter()
 
@@ -97,13 +98,13 @@ async def create_guest_item(
     saved_item = GuestItemsService.save_guest_item(item_data, guest_info)
 
     # Queue email dispatch in background
-    match_link = f"https://findory.app/guest/matches?token={guest_match_token}"
+    match_link = f"http://localhost:5173/guest/matches?token={guest_match_token}"
     background_tasks.add_task(
         send_guest_match_email,
-        email=guest_email,
-        name=guest_name,
+        email=guest_email.strip(),
+        name=guest_name.strip(),
         match_link=match_link,
-        item_title=title
+        item_title=title.strip()
     )
 
     return {
@@ -112,6 +113,3 @@ async def create_guest_item(
         "message": "Guest report submitted successfully! Check your email for your match link."
     }
 
-def send_guest_match_email(email: str, name: str, match_link: str, item_title: str):
-    # Implement email transmission logic 
-    print(f"Sending match link email to {email} for item '{item_title}': {match_link}")
