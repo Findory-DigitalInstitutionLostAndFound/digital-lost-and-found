@@ -9,6 +9,12 @@ import { handOverService } from '../services/handOverService';
 import { setupRealtime } from '../services/chatTokenService';
 
 type ClaimTab = 'mine' | 'incoming' | 'archived';
+const CAMPUS_SERVICE_POINTS = [
+    'Linnanmaa Campus - Oamk Designated Lost & Found Point',
+    'Linnanmaa Campus - University of Oulu Designated Lost & Found Point',
+    'Kontinkangas Campus - Oamk Designated Lost & Found Point',
+    'Kontinkangas Campus - University of Oulu Designated Lost & Found Point',
+  ];
 
 interface ClaimsPageProps {
   navigate: (page: string) => void;
@@ -28,7 +34,7 @@ export function ClaimsPage({ user, refreshCounts }: ClaimsPageProps) {
   const [message, setMessage] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-
+  
   // fetch claim on mount
   const fetchClaimsData = async (showLoader = true) => {
     try {
@@ -381,6 +387,7 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
   );
   const [isSavingMeetup, setIsSavingMeetup] = useState(false);
   const [isAcceptingMeetup, setIsAcceptingMeetup] = useState(false);
+  const [meetupError, setMeetupError] = useState<string | null>(null);
 
   const [qrPayload, setQrPayload] = useState<string | null>(null);
   const [qrExpiresAt, setQrExpiresAt] = useState<string | null>(null);
@@ -427,12 +434,18 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
       alert('Change the place or time before sending a new proposal.');
       return;
     }
-    const location = isHighValue
-      ? 'Campus service point'
-      : meetupLocation.trim();
+    const location = meetupLocation.trim();
 
     if (!location || !meetupTime) {
-      alert('Please set place and time.');
+      setMeetupError('Please set place and time.');
+      return;
+    }
+
+    //check if meetup time is between 8am and 4pm
+    const timePart = meetupTime.split('T')[1] ?? '';
+    const [hours] = timePart.split(':').map(Number);
+    if (Number.isNaN(hours) || hours < 8 || hours >= 16) {
+      setMeetupError('Please set a time service points are available, between 8:00 AM and 4:00 PM.');
       return;
     }
 
@@ -693,19 +706,32 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
                 {/*place */}
                 <div>
                   <label className= "font-mono text-[10px] uppercase block mb-1">
-                    Place
+                    Campus Service Point
                   </label>
-                  <input
-                    value={isHighValue ? 'Campus service point' : meetupLocation}
+                  <select
+                    value={meetupLocation}
                     onChange={e => setMeetupLocation(e.target.value)}
-                    disabled={isHighValue || (!canProposeFirst && !canCounter)}
-                    placeholder="e.g. Library lobby, Room 101"
+                    disabled={(!canProposeFirst && !canCounter)}
                     className="w-full h-10 px-3 text-sm border border-[#0E0D0B]/20 bg-white disabled:bg-[#0E0D0B]/5"
-                  />
+                  >
+                    <option value="" disabled>
+                      Select a designated campus service point...
+                    </option>
+                    {CAMPUS_SERVICE_POINTS.map(point => (
+                      <option key={point} value={point}>
+                        {point}
+                      </option>
+                    ))}
+                  </select>
+
+                  <p className="mt-1 font-mono text-[10px] text-[#0E0D0B]/70">
+                    All handovers take place at designated campus lost &amp; found points during campus hours. Claimant might need to show ID to staff. Keep proof of ownership with you to show ownership if needed.
+                  </p>
+
                   {isHighValue && (
                     <p className="mt-1 font-mono text-[10px] text-[#D93B2B]">
-                        High-Value Item: Handover is strictly limited to the Campus Service Point. Please verify the claimant's ID with a staff member before releasing the item. Do not hand it to a third party.
-                      </p>
+                      High-value item: Please verify the claimant&apos;s ID with a staff member before releasing the item. Do not hand it to a third party. Keep proof of ownership with you to show ownership if needed.
+                    </p>
                   )}
                 </div>
 
@@ -771,7 +797,12 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
                     <p className="text-xs text-[#0E0D0B]/60">
                       Waiting for the other person to accept.
                     </p>
-                    )}
+                  )}
+                  {meetupError && (
+                    <p className="text-xs text-red-500">
+                      {meetupError}
+                    </p>
+                  )}
                 </div>
               </>
             )}
