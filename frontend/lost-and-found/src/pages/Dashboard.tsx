@@ -5,12 +5,17 @@ import type { Item } from '../services/fetchItemsService';
 
 interface DashboardProps {
   navigate: (page: string) => void;
+  user?: { role?: string } | null;
+  isGuest?: boolean;
 }
 
-export function Dashboard({ navigate }: DashboardProps) {
+export function Dashboard({ navigate, user, isGuest }: DashboardProps) {
  const [userReports, setUserReports] = useState<Item[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Determine if the current session is a guest link user
+  const isGuestSession = isGuest ?? user?.role === 'guest';
 
   useEffect(() => {
     let isMounted = true;
@@ -63,36 +68,38 @@ export function Dashboard({ navigate }: DashboardProps) {
       </div>
 
       {/* Quick Action Banners */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-8 py-6 border-b border-[#0E0D0B]/10">
-        <div 
-          onClick={() => navigate('report-lost')}
-          className="border border-[#0E0D0B]/20 p-6 bg-[#FAF6EC] hover:border-[#D93B2B] transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-mono text-[10px] px-2 py-0.5 bg-[#D93B2B] text-[#FAF6EC] font-bold uppercase">
-              Lost Item
-            </span>
-            <PlusCircle size={16} className="text-[#0E0D0B]/65 group-hover:text-[#D93B2B] transition-colors" />
+      {!isGuestSession && (  
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-8 py-6 border-b border-[#0E0D0B]/10">
+          <div 
+            onClick={() => navigate('report-lost')}
+            className="border border-[#0E0D0B]/20 p-6 bg-[#FAF6EC] hover:border-[#D93B2B] transition-all cursor-pointer group"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-mono text-[10px] px-2 py-0.5 bg-[#D93B2B] text-[#FAF6EC] font-bold uppercase">
+                Lost Item
+              </span>
+              <PlusCircle size={16} className="text-[#0E0D0B]/65 group-hover:text-[#D93B2B] transition-colors" />
+            </div>
+            <h3 className="text-lg font-bold mb-1" style={{ fontFamily: 'Fraunces, serif' }}>Report Something Lost</h3>
+            <p className="text-xs text-[#0E0D0B]/70">Create a lost item entry with custom tags to automatically check against found items.</p>
           </div>
-          <h3 className="text-lg font-bold mb-1" style={{ fontFamily: 'Fraunces, serif' }}>Report Something Lost</h3>
-          <p className="text-xs text-[#0E0D0B]/70">Create a lost item entry with custom tags to automatically check against found items.</p>
-        </div>
 
-        <div 
-          onClick={() => navigate('report-found')}
-          className="border border-[#0E0D0B]/20 p-6 bg-[#FAF6EC] hover:border-[#06C167] transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-mono text-[10px] px-2 py-0.5 bg-[#06C167] text-[#0E0D0B] font-bold uppercase">
-              Found Item
-            </span>
-            <PlusCircle size={16} className="text-[#0E0D0B]/65 group-hover:text-[#06C167] transition-colors" />
+          <div 
+            onClick={() => navigate('report-found')}
+            className="border border-[#0E0D0B]/20 p-6 bg-[#FAF6EC] hover:border-[#06C167] transition-all cursor-pointer group"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-mono text-[10px] px-2 py-0.5 bg-[#06C167] text-[#0E0D0B] font-bold uppercase">
+                Found Item
+              </span>
+              <PlusCircle size={16} className="text-[#0E0D0B]/65 group-hover:text-[#06C167] transition-colors" />
+            </div>
+            <h3 className="text-lg font-bold mb-1" style={{ fontFamily: 'Fraunces, serif' }}>Report Something Found</h3>
+            <p className="text-xs text-[#0E0D0B]/70">Turn in a found item safely through institutional verification and secure campus handovers.</p>
           </div>
-          <h3 className="text-lg font-bold mb-1" style={{ fontFamily: 'Fraunces, serif' }}>Report Something Found</h3>
-          <p className="text-xs text-[#0E0D0B]/70">Turn in a found item safely through institutional verification and secure campus handovers.</p>
         </div>
-      </div>
-
+      )}
+      
       {/* User's Active Reports Section */}
       <div className="px-8 py-6">
         <h2 className="text-xl font-bold mb-4" style={{ fontFamily: 'Fraunces, serif' }}>Your Active Reports</h2>

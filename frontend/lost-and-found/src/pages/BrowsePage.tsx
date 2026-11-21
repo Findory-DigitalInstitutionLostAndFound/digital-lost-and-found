@@ -36,7 +36,8 @@ export function BrowsePage({ navigate }: BrowsePageProps) {
           category: i.category || 'Other',
           status: 'active' as const,
           imageUrl: i.blurred_image_url,
-          user_id: i.user_id
+          user_id: i.user_id,
+          guest_id: i.guest_id,
         }))
         setItems(formattedItems)
         try {
