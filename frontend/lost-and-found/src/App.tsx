@@ -18,6 +18,8 @@ import { claimsService } from './services/claimMessageService'
 // @ts-ignore Vite handles CSS side-effect imports at runtime.
 import './index.css'
 import { GuestPage } from './pages/GuestPage'
+import { type UserInfo } from './services/authService'
+import { guestService } from './services/guestService'
 
 
 type Page = 'dashboard' | 'home' | 'browse' | 'login' | 'register' | 'matches' | 'report-lost' | 'report-found' | 'guest' | 'claims' | 'profile'
@@ -34,9 +36,9 @@ function AppContent() {
   const [pendingClaimsCount, setPendingClaimsCount] = useState<number>(0)
 
   // Start with user as null, will be set after login or registration
-  const [user, setUser] = useState<{ name: string; email: string; phone: string; user_id: string } | null>(null)
+  const [user, setUser] = useState<UserInfo | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
-  const matching = useMatches(user?.user_id)
+  const matching = useMatches(user?.role === 'guest' ? undefined : user?.user_id)
   const pendingMatchesCount = matching.pendingCount
   useEffect(() => {
     const handlePopState = () => {
@@ -71,7 +73,10 @@ function AppContent() {
 
   // Function to fetch unread claims count from backend
   const refreshPendingCounts = async () => {
-    if (!user) return
+    if (!user || user.role === 'guest') {
+      setPendingClaimsCount(0)
+      return
+    }
     try {
       const claimsData = await claimsService.getClaims()
       const allClaims = [...claimsData.claims_as_claimant, ...claimsData.claims_as_founder]
@@ -99,7 +104,12 @@ function AppContent() {
         const currentUser = await authService.getCurrentUser()
         setUser(currentUser)
       } catch (err) {
-        setUser(null) 
+        try {
+          const guestUser = await guestService.getCurrentUser()
+          setUser(guestUser)
+        } catch {
+          setUser(null)
+        } 
       } finally {
         setIsLoading(false)
       }

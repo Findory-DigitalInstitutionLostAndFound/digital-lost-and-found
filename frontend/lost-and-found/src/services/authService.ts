@@ -21,7 +21,9 @@ export type UserInfo = {
   user_id: string,
   email: string,
   name: string,
-  phone: string
+  phone: string,
+  role: string,
+  item_id?: string
 };
 
 export type ForgotPasswordData = {
@@ -82,6 +84,7 @@ export const authService = {
             email: response.data.email,
             name: response.data.full_name,
             phone: response.data.phone,
+            role: 'user' // Mark this user as a regular user
         };
     },
     

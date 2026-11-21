@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { authService } from '../services/authService'
 import {type UserInfo} from '../services/authService'
+import { guestService } from '../services/guestService'
 
 export function useHandleEmailConfirmation(
   navigate: (page: string) => void,
@@ -24,16 +25,31 @@ export function useHandleEmailConfirmation(
     if (!accessToken) {
       return
     }
-    
+    console.log('Guest email confirmation verified successfully with backend.')
     // Password recovery
     if (type === 'recovery') {
       sessionStorage.setItem('resetToken', accessToken)
       navigate('login')
       return
     }
+
+    // Guest match link
+    if (type === 'guest_match') {
+      guestService
+        .verifyGuestEmailConfirmation(accessToken)
+        .then(async () => {
+          const guest = await guestService.getCurrentUser()
+          onSuccess?.(guest) // Call the onSuccess callback with guest info
+          navigate('dashboard') // Navigate after cookie is set
+        })
+        .catch((err) => {
+          console.error('Failed to verify guest session with backend:', err)
+          navigate('login')
+        })
+      return
+    }
     
     // Send token to backend to set session cookie
-    console.log('Received access token from Supabase:', accessToken)
     authService
       .verifyEmailConfirmation(accessToken)
       .then(async () => {

@@ -4,6 +4,8 @@ import { ItemCard } from '../components/ui/ItemCard'
 import type { Item } from '../components/ui/ItemCard'
 import { api } from '../services/api'
 import { authService } from '../services/authService'
+import { guestService } from '../services/guestService'
+import { fetchItemsService } from '../services/fetchItemsService'
 
 const CATEGORIES = ['Accessories', 'Electronics', 'Documents', 'Clothing', 'Keys', 'Bags', 'Jewellery', 'ID', 'Other']
 
@@ -22,11 +24,8 @@ export function BrowsePage({ navigate }: BrowsePageProps) {
   useEffect(() => {
     async function fetchBackendItems() {
       try {
-        const [itemsResponse, currentUser] = await Promise.all([
-          api.get('/items'),
-          authService.getCurrentUser()
-        ])
-        const formattedItems = itemsResponse.data.items.map((i: any) => ({
+        const backendItems = await fetchItemsService.fetchItems()
+        const formattedItems = backendItems.map((i: any) => ({
           id: i.id,
           type: i.item_type,
           title: i.title,
@@ -35,12 +34,22 @@ export function BrowsePage({ navigate }: BrowsePageProps) {
           location: i.location_name,
           date: i.event_timestamp ? i.event_timestamp.split('T')[0] : '',
           category: i.category || 'Other',
-          status: 'active',
+          status: 'active' as const,
           imageUrl: i.blurred_image_url,
           user_id: i.user_id
         }))
         setItems(formattedItems)
-        setCurrentUserId(currentUser.user_id)
+        try {
+          const currentUser = await authService.getCurrentUser()
+          setCurrentUserId(currentUser.user_id)
+        } catch {
+          try {
+            const guestUser = await guestService.getCurrentUser()
+            setCurrentUserId(guestUser.user_id ?? null)
+          } catch {
+            setCurrentUserId(null)
+          }
+        }
       } catch (err) {
         console.error('Failed to load items from backend:', err)
       } finally {

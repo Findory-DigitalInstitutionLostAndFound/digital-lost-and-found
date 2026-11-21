@@ -12,29 +12,47 @@ ALLOWED_CAMPUS_SERVICE_POINTS = {
 
 class UpdateClaimsService:
     @staticmethod
-    async def update_last_read_time(claim_id: str, user_id: str, access_token: str):
-        supabase = get_user_supabase_client(access_token)
+    def _get_roles(claim: dict, item: dict, actor: dict) -> tuple[bool, bool]:
+        auth_type = actor["auth_type"]
+        actor_id = actor["actor_id"]
+        if auth_type == "guest":
+            is_owner = item.get("guest_id") == actor_id
+            is_claimant = claim.get("claimant_guest_id") == actor_id
+        else:
+            is_owner = item.get("user_id") == actor_id
+            is_claimant = claim.get("claimant_user_id") == actor_id
+        return is_owner, is_claimant
 
-        claim_response = supabase.table("claims").select("*, items(user_id)").eq("id", claim_id).execute()
-
+    @staticmethod
+    def _load_claim_with_item(supabase, claim_id: str, item_fields: str = "user_id, guest_id") -> tuple[dict, dict]:
+        claim_response = (
+            supabase.table("claims")
+            .select(f"*, items({item_fields})")
+            .eq("id", claim_id)
+            .execute()
+        )
         if not claim_response.data:
-            raise Exception("Claim not found.")
+            raise HTTPException(status_code=404, detail="Claim not found.")
 
         claim = claim_response.data[0]
-        item = claim.get("items", {})
-
-        owner_id = item.get("user_id")
-        claimant_id = claim.get("claimant_user_id")
+        item = claim.get("items") or {}
+        return claim, item
+    
+    @staticmethod
+    async def update_last_read_time(claim_id: str, actor: dict):
+        supabase = actor["supabase"]
+        claim, item = UpdateClaimsService._load_claim_with_item(supabase, claim_id, "user_id, guest_id")
+        is_owner, is_claimant = UpdateClaimsService._get_roles(claim, item, actor)
 
         current_time = datetime.now(timezone.utc).isoformat()
 
         #update the correct last_read_time based on the user role
-        if user_id == claimant_id:
+        if is_claimant:
             supabase.table("claims").update({
                 "claimant_last_read_at": current_time
             }).eq("id", claim_id).execute()
 
-        elif user_id == owner_id:
+        elif is_owner:
             supabase.table("claims").update({
                 "owner_last_read_at": current_time
             }).eq("id", claim_id).execute()
@@ -43,36 +61,31 @@ class UpdateClaimsService:
             raise Exception("User is neither the claimant nor the owner of the claim.")
 
     @staticmethod
-    async def update_claim_status(claim_id: str, user_id: str, new_status: str, access_token: str):
-        supabase = get_user_supabase_client(access_token)
+    async def update_claim_status(claim_id: str, actor: dict, new_status: str):
+        supabase = actor["supabase"]
+        claim, item = UpdateClaimsService._load_claim_with_item(supabase, claim_id, "user_id, guest_id")
+        is_owner, is_claimant = UpdateClaimsService._get_roles(claim, item, actor)
 
-        claim_response = supabase.table("claims").select("*, items(user_id)").eq("id", claim_id).execute()
-
-        if not claim_response.data:
-            raise Exception("Claim not found.")
-
-        claim = claim_response.data[0]
-        item = claim.get("items", {})
-
-        owner_id = item.get("user_id")
-        claimant_id = claim.get("claimant_user_id")
-
-        # Validate that the user is either the owner or the claimant
-        if user_id != owner_id and user_id != claimant_id:
+        if not is_owner and not is_claimant:
             raise Exception("Unauthorized to update the claim status.")
-
+        
         # Update the status
-        updated_claim_response = supabase.table("claims").update({
-            "status": new_status
-        }).eq("id", claim_id).execute()
+        updated_claim_response = (
+            supabase.table("claims")
+            .update({
+                "status": new_status
+            })
+            .eq("id", claim_id)
+            .execute()
+        )
 
         if not updated_claim_response.data:
-            raise Exception("Failed to update claim status.")
+            raise Exception(status_code=500, detail="Failed to update claim status.")
 
         return updated_claim_response.data[0]
 
     @staticmethod
-    async def upload_message_image(file: UploadFile, access_token: str):
+    async def upload_message_image(file: UploadFile, supabase: dict):
         MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
         ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"]
         try:
@@ -89,8 +102,6 @@ class UpdateClaimsService:
                     status_code=400,
                     detail="File is too large. Maximum size is 5 MB."
                 )
-
-            supabase = get_user_supabase_client(access_token)  
             
             # Generate a unique filename to avoid collisions
             file_extension = file.filename.split(".")[-1]
@@ -124,8 +135,10 @@ class UpdateClaimsService:
             )
 
     @staticmethod
-    async def send_message(claim_id: str, user_id: str, content: str, image_url: str, access_token: str):
-        supabase = get_user_supabase_client(access_token)
+    async def send_message(claim_id: str, content: str, image_url: str | None, actor: dict):
+        supabase = actor["supabase"]
+        auth_type = actor["auth_type"]
+        actor_id = actor["actor_id"]
 
         # Validate that the claim exists and the user is either the owner or the claimant
         claim_response = supabase.table("claims").select("*, items(user_id)").eq("id", claim_id).execute()
@@ -133,20 +146,17 @@ class UpdateClaimsService:
         if not claim_response.data:
             raise Exception("Claim not found.")
 
-        claim = claim_response.data[0]
-        item = claim.get("items", {})
+        claim, item = UpdateClaimsService._load_claim_with_item(supabase, claim_id, "user_id, guest_id")
+        is_owner, is_claimant = UpdateClaimsService._get_roles(claim, item, actor)
 
-        owner_id = item.get("user_id")
-        claimant_id = claim.get("claimant_user_id")
-
-        if user_id != owner_id and user_id != claimant_id:
+        if not is_owner and not is_claimant:
             raise Exception("Unauthorized to send a message in this claim.")
 
         # Insert the message into the "claim_messages" table
         message_data = {
             "claim_id": claim_id,
-            "sender_user_id": user_id,
-            "sender_guest_id": None,  
+            "sender_user_id": actor_id if auth_type == "user" else None,
+            "sender_guest_id": actor_id if auth_type == "guest" else None,
             "content": content,
             "image_url": image_url,
             "created_at": datetime.now(timezone.utc).isoformat()
@@ -159,43 +169,22 @@ class UpdateClaimsService:
 
         await UpdateClaimsService.update_last_read_time(
             claim_id=claim_id,
-            user_id=user_id,
-            access_token=access_token,
+            actor=actor
         )
 
         return response.data[0] 
 
-    # load claim and item details for meetup update
-    @staticmethod
-    def _load_claim_with_item(supabase, claim_id: str) -> tuple[dict, dict]:
-        claim_response = (
-            supabase.table("claims")
-            .select("*, items(user_id, is_high_valued)")
-            .eq("id", claim_id)
-            .execute()
-        )
-        if not claim_response.data:
-            raise HTTPException(status_code=404, detail="Claim not found.")
-
-        claim = claim_response.data[0]
-        item = claim.get("items") or {}
-        return claim, item
-
     @staticmethod
     async def update_meetup(
         claim_id: str,
-        user_id: str,
+        actor: dict,
         meetup_location: str | None,
         meetup_time: str,
-        access_token: str,
     ):
-        supabase = get_user_supabase_client(access_token)
-        claim, item = UpdateClaimsService._load_claim_with_item(supabase, claim_id)
+        supabase = actor["supabase"]
+        claim, item = UpdateClaimsService._load_claim_with_item(supabase, claim_id, "user_id, guest_id, is_high_valued")
 
-        owner_id = item.get("user_id")
-        claimant_id = claim.get("claimant_user_id")
-        is_owner = user_id == owner_id
-        is_claimant = user_id == claimant_id
+        is_owner, is_claimant = UpdateClaimsService._get_roles(claim, item, actor)
 
         if not is_owner and not is_claimant:
             raise HTTPException(status_code=403, detail="Not allowed on this claim.")
@@ -246,14 +235,11 @@ class UpdateClaimsService:
 
     # accept meetup proposal
     @staticmethod
-    async def accept_meetup(claim_id: str, user_id: str, access_token: str):
-        supabase = get_user_supabase_client(access_token)
+    async def accept_meetup(claim_id: str, actor: dict):
+        supabase = actor["supabase"]
         claim, item = UpdateClaimsService._load_claim_with_item(supabase, claim_id)
 
-        owner_id = item.get("user_id")
-        claimant_id = claim.get("claimant_user_id")
-        is_owner = user_id == owner_id
-        is_claimant = user_id == claimant_id
+        is_owner, is_claimant = UpdateClaimsService._get_roles(claim, item, actor)
 
         if not is_owner and not is_claimant:
             raise HTTPException(status_code=403, detail="Not allowed on this claim.")

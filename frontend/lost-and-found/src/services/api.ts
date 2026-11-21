@@ -17,10 +17,11 @@ api.interceptors.response.use(
             const isPublicPath =
                 path === '/' ||
                 path.includes('/login') ||
-                path.includes('/register') 
+                path.includes('/register') ||
+                path.includes('/guest')
 
             const requestUrl = error.config?.url || '' //
-            const checkIfHasAuth = requestUrl.includes('/auth/me') // Check if the request URL contains '/auth/me'. 
+            const checkIfHasAuth = requestUrl.includes('/auth/me') || requestUrl.includes('/guest/current-user'); // Check if the request URL contains '/auth/me' or '/guest/current-user'
             
             if (!isPublicPath && !checkIfHasAuth) {
                 // clear local storage and redirect to login page 

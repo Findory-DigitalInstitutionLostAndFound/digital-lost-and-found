@@ -18,12 +18,13 @@ const CAMPUS_SERVICE_POINTS = [
 
 interface ClaimsPageProps {
   navigate: (page: string) => void;
-  user?: { name: string; email: string; phone: string; user_id: string } | null;
+  user?: { name: string; email: string; phone: string; user_id: string, role?: string } | null;
   refreshCounts?: () => void;
 }
 
 export function ClaimsPage({ user, refreshCounts }: ClaimsPageProps) {
   const currentUserId = user?.user_id ?? 'user-current';
+  const isGuest = user?.role === 'guest';
  
   const [claimantClaims, setClaimantClaims] = useState<ClaimDetail[]>([]);
   const [founderClaims, setFounderClaims] = useState<ClaimDetail[]>([]);
@@ -96,7 +97,7 @@ export function ClaimsPage({ user, refreshCounts }: ClaimsPageProps) {
 
   // Supabase realtime subscription for live chat updates
   useEffect(() => {
-    if (!selectedId) return;
+    if (!selectedId || isGuest) return;
 
     let channel: ReturnType<ReturnType<typeof createClient>["channel"]> | null = null;
     let supabase: ReturnType<typeof createClient> | null = null;
@@ -166,7 +167,7 @@ export function ClaimsPage({ user, refreshCounts }: ClaimsPageProps) {
       channel = null;
       accessToken = null;
     };
-  }, [selectedId]);
+  }, [selectedId, isGuest]);
 
   // Handle Sending Message with Attachment
   const submitMessage = async () => {
@@ -305,6 +306,7 @@ export function ClaimsPage({ user, refreshCounts }: ClaimsPageProps) {
         <ClaimConversation
           claim={selectedClaim}
           currentUserId={currentUserId}
+          isGuest={isGuest}
           tab={tab}
           message={message}
           imageFile={imageFile}
@@ -358,9 +360,10 @@ function ClaimStatus({ status }: { status: string }) {
   );
 }
 
-function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange, imageFile, onImageChange, onSend, onStatusChange, onRefresh, isUpdatingStatus }: {
+function ClaimConversation({ claim, currentUserId, isGuest, tab, message, onMessageChange, imageFile, onImageChange, onSend, onStatusChange, onRefresh, isUpdatingStatus }: {
   claim: ClaimDetail;
   currentUserId: string;
+  isGuest: boolean;
   tab: ClaimTab;
   message: string;
   onMessageChange: (val: string) => void;
@@ -536,7 +539,7 @@ function ClaimConversation({ claim, currentUserId, tab, message, onMessageChange
 
       <div className="px-6 md:px-8 py-8 space-y-4 min-h-70">
         {claim.messages.map(entry => {
-          const isMine = entry.sender_user_id === currentUserId;
+          const isMine = entry.sender_user_id === currentUserId || (isGuest && entry.sender_user_id === currentUserId);
           // Detect the AI-generated verification questions message and format it
           const isAiQuestions =
             entry.content.startsWith('Verification questions generated for ownership check:');
