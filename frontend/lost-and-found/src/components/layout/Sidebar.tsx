@@ -11,13 +11,17 @@ const MOCK_NAV = [
   { label: 'Report Found', page: 'report-found' },
 ]
 
+//Restrict guest sidebar navigation to only Dashboard, Browse, Matches, and Claims
+const GUEST_ALLOWED_PAGES = new Set(['dashboard', 'browse', 'matches', 'claims'])
+
 interface SidebarProps {
   currentPage: string
   navigate: (page: string) => void
-  user?: { name: string; email: string } | null
+  user?: { name: string; email: string; role?: string } | null
   logout?: () => void
   pendingMatchesCount?: number
   pendingClaimsCount?: number
+  isGuest?: boolean
 }
 
 export function Sidebar({
@@ -27,8 +31,15 @@ export function Sidebar({
   logout = () => alert('Signed out successfully'),
   pendingMatchesCount = 0,
   pendingClaimsCount = 1,
+  isGuest = false
 }: SidebarProps) {
   const [open, setOpen] = useState(false)
+
+  // Filter out Profile, Report Lost, and Report Found for guest link users
+  const isGuestSession = isGuest || user?.role === 'guest'
+  const navItems = isGuestSession
+    ? MOCK_NAV.filter(item => GUEST_ALLOWED_PAGES.has(item.page))
+    : MOCK_NAV
 
   const NavContent = () => (
     <div className="flex flex-col h-full bg-[#0E0D0B] text-white">
@@ -54,7 +65,7 @@ export function Sidebar({
 
       {/* Nav Section */}
       <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto">
-        {MOCK_NAV.map((item, index) => {
+        {navItems.map((item, index) => {
           const isActive = currentPage === item.page
           const isSeparated = !item.stamp
 

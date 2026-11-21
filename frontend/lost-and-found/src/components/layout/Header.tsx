@@ -6,6 +6,7 @@ interface HeaderProps {
   pendingMatchesCount?: number
   pendingClaimsCount?: number
   title?: string
+  isGuest?: boolean
 }
 
 export function Header({
@@ -14,6 +15,7 @@ export function Header({
   pendingMatchesCount = 0,
   pendingClaimsCount = 1,
   title,
+  isGuest = false,
 }: HeaderProps) {
   const formattedTitle = title || currentPage.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase())
 
@@ -31,23 +33,28 @@ export function Header({
 
       {/* Quick Action Buttons & Status */}
       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-        <div className="hidden sm:flex items-center gap-2">
-          <button
-            onClick={() => navigate('report-lost')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#D93B2B] text-white font-mono text-xs uppercase font-bold tracking-wider hover:opacity-90 transition-opacity"
-          >
-            <PlusCircle size={14} /> Report Lost
-          </button>
-          <button
-            onClick={() => navigate('report-found')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#06C167] text-[#0E0D0B] font-mono text-xs uppercase font-bold tracking-wider hover:opacity-90 transition-opacity"
-          >
-            <PlusCircle size={14} /> Report Found
-          </button>
-        </div>
+        {!isGuest && (    
+          <> 
+            <div className="hidden sm:flex items-center gap-2">
+              <button
+                onClick={() => navigate('report-lost')}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#D93B2B] text-white font-mono text-xs uppercase font-bold tracking-wider hover:opacity-90 transition-opacity"
+              >
+                <PlusCircle size={14} /> Report Lost
+              </button>
+              <button
+                onClick={() => navigate('report-found')}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#06C167] text-[#0E0D0B] font-mono text-xs uppercase font-bold tracking-wider hover:opacity-90 transition-opacity"
+              >
+                <PlusCircle size={14} /> Report Found
+              </button>
+            </div>
 
         <div className="h-6 w-px bg-[#0E0D0B]/10 mx-1 hidden sm:block" />
-        
+        </>
+        )}
+
+
         {/* Matches Quick Button */}
         <button
           onClick={() => navigate('matches')}

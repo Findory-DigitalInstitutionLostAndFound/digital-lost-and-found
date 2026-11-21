@@ -15,6 +15,7 @@ export type Item = {
   status: 'active' | 'matched' | 'resolved'
   imageUrl?: string
   user_id?: string | null
+  guest_id?: string | null
 }
 
 type ItemCardProps = {
@@ -27,7 +28,7 @@ export function ItemCard({ item, navigate, currentUserId }: ItemCardProps) {
   const isMatched = item.status === 'matched'
 
   // Check if the item belongs to the currently logged in user
-  const isUserItem = currentUserId ? item.user_id === currentUserId : false
+  const isUserItem = currentUserId ? item.user_id === currentUserId || item.guest_id === currentUserId : false
 
   // Modal State for custom UI notifications
   const [modalState, setModalState] = useState<{

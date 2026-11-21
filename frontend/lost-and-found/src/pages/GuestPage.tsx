@@ -17,6 +17,16 @@ export function GuestPage({ navigate }: GuestPageProps) {
 
       {/* Main Content Container */}
       <div className="flex-1 px-6 sm:px-12 py-12 max-w-5xl mx-auto w-full">
+        {/* Back button */}
+        <div className="mb-6">
+          <button
+              onClick={() => navigate('home')}
+              className="flex items-center gap-1.5 mono text-xs text-[#524B43] dark:text-[#B8B0A4] hover:text-[#0E0D0B] dark:hover:text-[#F0EAD6] transition-colors cursor-pointer"
+              >
+              <ArrowLeft size={13} />
+                <span>BACK</span>
+            </button>
+          </div>
         {currentView === 'found-instructions' && (
           <div className="mb-8">
             <button
@@ -40,7 +50,7 @@ export function GuestPage({ navigate }: GuestPageProps) {
                 How can we help?
               </h1>
               <p className="text-sm sm:text-base text-[#524B43] dark:text-[#B8B0A4] max-w-2xl leading-relaxed">
-                Guests can report a lost item and follow AI-suggested matches through a secure email link. Found items must be handed to University staff.
+                Guests can report a lost item and through a secure email link you'll be brought to a dashboard where you can browse and claim your items. And also follow suggested matches for your items. <br /> Found items must be handed to University staff.
               </p>
             </div>
 

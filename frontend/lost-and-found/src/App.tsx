@@ -38,7 +38,11 @@ function AppContent() {
   // Start with user as null, will be set after login or registration
   const [user, setUser] = useState<UserInfo | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
-  const matching = useMatches(user?.role === 'guest' ? undefined : user?.user_id)
+
+  //Track explicitly when the active session belongs to a logged-in guest link user
+  const isGuestSession = user?.role === 'guest'
+
+  const matching = useMatches(isGuestSession ? undefined : user?.user_id)
   const pendingMatchesCount = matching.pendingCount
   useEffect(() => {
     const handlePopState = () => {
@@ -73,7 +77,7 @@ function AppContent() {
 
   // Function to fetch unread claims count from backend
   const refreshPendingCounts = async () => {
-    if (!user || user.role === 'guest') {
+    if (!user || isGuestSession) {
       setPendingClaimsCount(0)
       return
     }
@@ -120,7 +124,11 @@ function AppContent() {
 
   const handleLogout = async () => {
     try{
+      if (isGuestSession) {
+        await guestService.logout() //When signing out of a guest session so the guest cookie is cleared
+      } else {
       await authService.userLogout() //backend delete the cookie
+      }
     } catch (err) {
       console.error('Logout failed:', err)
     } finally {
@@ -153,6 +161,7 @@ function AppContent() {
     )
   }
 
+
   // Define public pages that don't require authentication
   const isPublicPage = currentPage === 'login' || currentPage === 'register' || currentPage === 'home' || currentPage === 'guest' || currentPage === 'report-lost' 
   const pageProps = { navigate, selectedItemId, user} as any
@@ -166,7 +175,7 @@ function AppContent() {
 
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard {...pageProps} />
+        return <Dashboard {...pageProps} isGuest={isGuestSession} />
       case 'home':
         return <Homepage {...pageProps} />
       case 'browse':
@@ -178,10 +187,22 @@ function AppContent() {
       case 'claims':
         return <ClaimsPage {...pageProps} refreshCounts={refreshPendingCounts} />
       case 'report-lost':
-        return <ReportItemPage mode="lost" navigate={navigate} isGuest={!user}/>
+        //  Block logged-in guest link users from creating more reports, while keeping unauthenticated (!user) guest reporting intact
+        if (isGuestSession) {
+          return <Dashboard {...pageProps} isGuest={true} />
+        }
+        return <ReportItemPage mode="lost" navigate={navigate} isGuest={!user} />
       case 'report-found':
-        return <ReportItemPage mode="found" navigate={navigate} isGuest={false}/>
+        //  Block logged-in guest link users from accessing report-found
+        if (isGuestSession) {
+          return <Dashboard {...pageProps} isGuest={true} />
+        }
+        return <ReportItemPage mode="found" navigate={navigate} isGuest={false} />
       case 'profile':
+        // Block logged-in guest link users from accessing profile
+        if (isGuestSession) {
+          return <Dashboard {...pageProps} isGuest={true} />
+        }
         return (
           <ProfilePage
             user={user}
@@ -197,7 +218,7 @@ function AppContent() {
       case 'register':
         return <RegisterPage {...pageProps} />
       default:
-        return <Dashboard {...pageProps} />
+        return <Dashboard {...pageProps} isGuest={isGuestSession}/>
     }
   }
 
@@ -223,6 +244,7 @@ function AppContent() {
         logout={handleLogout}
         pendingMatchesCount={pendingMatchesCount}
         pendingClaimsCount={pendingClaimsCount}
+        isGuest={isGuestSession}
       />
 
       {/* Main Content Area */}
@@ -232,6 +254,7 @@ function AppContent() {
           navigate={navigate} 
           pendingMatchesCount={pendingMatchesCount}
           pendingClaimsCount={pendingClaimsCount}
+          isGuest={isGuestSession}
         />
         <main className="flex-1">
           {renderPageView()}
