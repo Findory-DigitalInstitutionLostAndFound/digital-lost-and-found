@@ -48,3 +48,29 @@ def dataset_image(item_id: str):
     if path is None:
         raise HTTPException(status_code=404, detail='Dataset image not available')
     return FileResponse(path)
+
+
+from uuid import UUID
+from pydantic import BaseModel
+from app.service.match_dismissal_service import save_dismissal, restore_dismissal
+
+
+class DismissalRequest(BaseModel):
+    lost_item_id: UUID
+    found_item_id: UUID
+
+
+@router.put('/dismissals')
+def dismiss_match(payload: DismissalRequest, request: Request, current_user: dict = Depends(get_current_user)):
+    token = request.cookies.get('access_token')
+    if not token:
+        raise HTTPException(status_code=401, detail='Not authenticated')
+    return save_dismissal(token,current_user.get('sub'),str(payload.lost_item_id),str(payload.found_item_id))
+
+
+@router.delete('/dismissals')
+def restore_match(payload: DismissalRequest, request: Request, current_user: dict = Depends(get_current_user)):
+    token = request.cookies.get('access_token')
+    if not token:
+        raise HTTPException(status_code=401, detail='Not authenticated')
+    return restore_dismissal(token,current_user.get('sub'),str(payload.lost_item_id),str(payload.found_item_id))

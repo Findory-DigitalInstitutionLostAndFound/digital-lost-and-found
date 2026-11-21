@@ -7,7 +7,7 @@ import { MatchesPage } from '../src/pages/MatchesPage'
 import { Header } from '../src/components/layout/Header'
 import { api } from '../src/services/api'
 import { claimService } from '../src/services/claimService'
-vi.mock('../src/services/api', () => ({ api: { get: vi.fn(), getUri: ({url}: {url:string}) => url } }))
+vi.mock('../src/services/api', () => ({ api: { get: vi.fn(), put: vi.fn(), delete: vi.fn(), getUri: ({url}: {url:string}) => url } }))
 vi.mock('../src/services/claimService', () => ({ claimService: { createClaim: vi.fn() } }))
 const item = { id: 'L', type: 'lost', title: 'Wallet lost', description: 'Wallet', location: 'Library', date: '2026-11-17', tags: ['black'] }
 const rows = [1, 2].map(n => ({ id: `L:F${n}`, score: 90, imageSimilarity: null, status: 'pending', commonTags: ['black'], createdAt: '', lostItem: item, foundItem: { ...item, id: `F${n}`, type: 'found', title: `Found wallet ${n}` } }))
@@ -19,7 +19,15 @@ function Harness() {
     <button onClick={() => setPage(page === 'matches' ? 'dashboard' : 'matches')}>Toggle page</button>
     {page === 'matches' && <MatchesPage controller={controller} />}</>
 }
-beforeEach(() => { localStorage.clear(); vi.mocked(api.get).mockResolvedValue({ data: rows }); vi.mocked(claimService.createClaim).mockResolvedValue({ status: 'success', claim_id: 'claim', message: 'Created' }) })
+const savedDismissals = new Set<string>()
+beforeEach(() => {
+  localStorage.clear(); savedDismissals.clear()
+  vi.mocked(api.get).mockImplementation(async () => ({ data: rows.map(r => ({ ...r, status: savedDismissals.has(r.id) ? 'dismissed' : 'pending' })) }) as never)
+  vi.mocked(api.put).mockImplementation(async (_url, body) => { const pair=body as {lost_item_id:string;found_item_id:string}; savedDismissals.add(`${pair.lost_item_id}:${pair.found_item_id}`); return {data:{status:'dismissed'}} })
+  vi.mocked(api.delete).mockImplementation(async (_url, config) => { const pair=config?.data; savedDismissals.delete(`${pair.lost_item_id}:${pair.found_item_id}`); return {data:{status:'restored'}} })
+  vi.mocked(claimService.createClaim).mockResolvedValue({ status: 'success', claim_id: 'claim', message: 'Created' })
+})
+
 afterEach(cleanup)
 const count = () => screen.getByLabelText('Pending count').textContent
 
@@ -68,12 +76,12 @@ describe('matching UI and shared state', () => {
     await screen.findByRole('button', { name: 'confirmed (1)' })
     expect(count()).toBe('1')
   })
-  it('switches methods and keeps separate review decisions', async () => {
+  it('keeps live dismissals across matching methods', async () => {
     const user = userEvent.setup(); render(<Harness />)
     await screen.findByRole('button', { name: 'pending (2)' })
     await user.click(screen.getAllByRole('button', { name: 'Not mine' })[0])
     await user.selectOptions(screen.getByLabelText('Matching method'), 'baseline')
-    await waitFor(() => expect(count()).toBe('2'))
+    await waitFor(() => expect(count()).toBe('1'))
     expect(api.get).toHaveBeenLastCalledWith('/matches/live', { params: { source: 'baseline', top_k: 3 } })
     await user.selectOptions(screen.getByLabelText('Matching method'), 'combined')
     await waitFor(() => expect(count()).toBe('1'))
@@ -140,5 +148,56 @@ describe('combined evidence display', () => {
     render(<Harness/>);
     await screen.findByText(/Text-only fallback/)
     expect(screen.queryByText(/Image cosine:/)).toBeNull()
+  })
+})
+
+describe('database-backed dismissals',()=>{
+  it('waits for server success and does not store live dismissals in localStorage',async()=>{
+    const user=userEvent.setup();render(<Harness/>);
+    await screen.findByRole('button',{name:'pending (2)'})
+    await user.click(screen.getAllByRole('button',{name:'Not mine'})[0])
+    await waitFor(()=>expect(count()).toBe('1'))
+    expect(api.put).toHaveBeenCalledWith('/matches/dismissals',{lost_item_id:'L',found_item_id:'F1'})
+    expect(localStorage.length).toBe(0)
+  })
+  it('leaves counts and status unchanged when a dismissal cannot be saved',async()=>{
+    vi.mocked(api.put).mockRejectedValueOnce(new Error('failed'))
+    const user=userEvent.setup();render(<Harness/>);
+    await screen.findByRole('button',{name:'pending (2)'})
+    await user.click(screen.getAllByRole('button',{name:'Not mine'})[0])
+    await screen.findByText('Dismissal was not saved. Please retry.')
+    expect(count()).toBe('2')
+  })
+  it('restores a live suggestion through the backend',async()=>{
+    const user=userEvent.setup();render(<Harness/>);
+    await screen.findByRole('button',{name:'pending (2)'})
+    await user.click(screen.getAllByRole('button',{name:'Not mine'})[0])
+    await screen.findByRole('button',{name:'Restore suggestion'})
+    await user.click(screen.getByRole('button',{name:'Restore suggestion'}))
+    await waitFor(()=>expect(count()).toBe('2'))
+    expect(api.delete).toHaveBeenCalledWith('/matches/dismissals',{data:{lost_item_id:'L',found_item_id:'F1'}})
+  })
+  it('disables live dismissal until database setup is available',async()=>{
+    vi.mocked(api.get).mockResolvedValueOnce({data:rows.map(r=>({...r,dismissalSyncAvailable:false}))})
+    render(<Harness/>);
+    await screen.findByText(/Saving dismissals is currently unavailable/)
+    expect(screen.getAllByRole('button',{name:'Not mine'})[0]).toHaveProperty('disabled',true)
+    expect(screen.getAllByRole('button',{name:'Create claim'})[0]).toHaveProperty('disabled',false)
+  })
+  it('does not reuse old browser-only dismissals as live database decisions',async()=>{
+    localStorage.setItem('matching-review-v1:user-A:live:combined',JSON.stringify({'L:F1':'dismissed'}))
+    render(<Harness/>);
+    await screen.findByRole('button',{name:'pending (2)'})
+    expect(count()).toBe('2')
+  })
+  it('keeps dataset dismissals browser-only',async()=>{
+    const user=userEvent.setup();render(<Harness/>);
+    await screen.findByRole('button',{name:'pending (2)'})
+    await user.selectOptions(screen.getByLabelText('Reports'),'dataset')
+    await screen.findAllByRole('button',{name:'Confirm demo match'})
+    await user.click(screen.getAllByRole('button',{name:'Not mine'})[0])
+    await waitFor(()=>expect(count()).toBe('1'))
+    expect(api.put).not.toHaveBeenCalled()
+    expect(localStorage.length).toBe(1)
   })
 })
