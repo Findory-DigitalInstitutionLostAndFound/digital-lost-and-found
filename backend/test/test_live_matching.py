@@ -23,7 +23,7 @@ class Query:
 
 @pytest.fixture
 def setup(monkeypatch):
-    db={'items':[item('L', 'lost', 'me'),item('OTHER-LOST','lost','other'),item('F'),item('OWN-FOUND',user='me')], 'claims':[]}
+    db={'items':[item('L', 'lost', 'me'),item('OTHER-LOST','lost','other'),item('F'),item('OWN-FOUND',user='me')], 'claims':[], 'match_dismissals':[]}
     class Client:
         def table(self, name): return Query(list(db[name]))
     monkeypatch.setattr(service,'get_user_supabase_client',lambda token:Client())
@@ -125,3 +125,16 @@ def test_combined_live_ranking_uses_images_only_for_text_eligible_pairs(setup,mo
 def test_text_only_modes_do_not_fetch_images(setup,monkeypatch):
     monkeypatch.setattr(service,'score_images',lambda *args:pytest.fail('text-only must not fetch images'))
     assert service.get_live_matches('token','me',source='robust')[0]['imageSimilarity'] is None
+
+
+def test_database_dismissal_is_restored_and_does_not_consume_pending_slot(setup,monkeypatch):
+    setup['items'] += [item('F2')]
+    setup['match_dismissals']=[dict(user_id='me',lost_item_id='L',found_item_id='F')]
+    rows=service.get_live_matches('token','me',source='robust',top_k=1)
+    assert [(r['foundItem']['id'],r['status']) for r in rows]==[('F','dismissed'),('F2','pending')]
+
+
+def test_active_claim_takes_priority_over_dismissal(setup):
+    setup['match_dismissals']=[dict(user_id='me',lost_item_id='L',found_item_id='F')]
+    setup['claims']=[dict(item_id='F',status='pending',claimant_user_id='me')]
+    assert service.get_live_matches('token','me',source='robust')[0]['status']=='confirmed'

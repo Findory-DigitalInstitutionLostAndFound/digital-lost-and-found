@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from app.core.supabase_user import get_user_supabase_client
 from app.service.matching_service import display_item
 from app.service.image_matching_service import score_images
+from app.service.match_dismissal_service import load_dismissals
 
 ROOT = Path(__file__).resolve().parents[3]
 FIELDS = 'id,user_id,item_type,title,category,public_description,location_name,event_timestamp,blurred_image_url,ai_tags'
@@ -91,19 +92,25 @@ def get_live_matches(token, user_id, min_score=70, source='combined', top_k=3):
         claims = fetch_all(client.table('claims').select('item_id,status').eq('claimant_user_id', user_id).in_('status', ['pending', 'approved']))
         claimed = {r['item_id'] for r in claims}
         li, fi = {r['id']: r for r in lost}, {r['id']: r for r in found}
-        selected, counts = [], {}
+        dismissed, dismissal_sync = load_dismissals(client, user_id)
+        selected, counts, review_counts = [], {}, {}
         for row in rows:
             a, b = row['lost_item_id'], row['found_item_id']
-            if row['score'] < min_score or row.get('conflicts') or a not in li or b not in fi or counts.get(a, 0) >= top_k:
+            if row['score'] < min_score or row.get('conflicts') or a not in li or b not in fi:
+                continue
+            status = 'confirmed' if b in claimed else 'dismissed' if (a,b) in dismissed else 'pending'
+            # Dismissals must not occupy the pending recommendation slots.
+            pool = review_counts if status == 'dismissed' else counts
+            if pool.get(a, 0) >= top_k:
                 continue
             lost_view, found_view = live_item(li[a]), live_item(fi[b])
             selected.append(dict(id=f'{a}:{b}', score=row['score'], method=source,
                 imageSimilarity=row.get('imageSimilarity'), textScore=row['score'],
                 rankingScore=row.get('rankingScore'), evidence=row.get('evidence', 'text-only'),
-                imageStatus=image_status, status='confirmed' if b in claimed else 'pending',
+                imageStatus=image_status, status=status, dismissalSyncAvailable=dismissal_sync,
                 commonTags=sorted(set(lost_view['tags']) & set(found_view['tags'])),
                 createdAt=found_view['date'], lostItem=lost_view, foundItem=found_view))
-            counts[a] = counts.get(a, 0) + 1
+            pool[a] = pool.get(a, 0) + 1
         return selected
     except HTTPException:
         raise

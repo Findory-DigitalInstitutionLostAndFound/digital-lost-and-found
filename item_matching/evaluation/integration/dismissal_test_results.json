@@ -1,0 +1,20 @@
+{
+  "date": "2026-11-20",
+  "python_tests": {
+    "passed": 128,
+    "failed": 0
+  },
+  "ui_tests": {
+    "passed": 19,
+    "failed": 0
+  },
+  "frontend_build": "passed; existing bundle-size warning",
+  "migration": "backend/migrations/20261120_match_dismissals.sql",
+  "migration_applied": false,
+  "real_rls_verified": false,
+  "notes": [
+    "Database operations tested using controlled fake clients, not PostgreSQL.",
+    "Live dismissals require migration; dataset reviews remain browser-only.",
+    "Prior local live dismissals are not automatically uploaded."
+  ]
+}

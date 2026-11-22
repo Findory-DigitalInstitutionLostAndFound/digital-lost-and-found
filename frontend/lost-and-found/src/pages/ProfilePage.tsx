@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { AlertTriangle, FileText, Mail, Plus, Trash2, X } from "lucide-react"
 import { api } from "../services/api"
 import { ItemCard } from "../components/ui/ItemCard"

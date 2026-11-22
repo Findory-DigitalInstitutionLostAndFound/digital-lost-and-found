@@ -11,6 +11,7 @@ export interface MatchItem {
 }
 export interface ItemMatch {
   id: string; score: number; imageSimilarity: number | null
+  dismissalSyncAvailable?: boolean
   rankingScore?: number | null; evidence?: string; imageStatus?: string
   status: MatchStatus; commonTags: string[]; createdAt: string
   lostItem: MatchItem; foundItem: MatchItem
@@ -41,7 +42,7 @@ export function useMatches(userId?: string) {
     setState({ key, rows: [], loading: true, error: '' })
     api.get<ItemMatch[]>(`/matches/${mode}`, { params: { source, top_k: 3 } }).then(({ data }) => {
       if (!active) return
-      const decisions = readDecisions(key)
+      const decisions = mode === 'dataset' ? readDecisions(key) : {}
       const rows = data.map(row => ({ ...row,
         // Real claims from the server take precedence over browser dismissals.
         status: row.status === 'confirmed' ? row.status :
@@ -81,17 +82,53 @@ export function useMatches(userId?: string) {
       setAction({ key: requestKey, id: '', error: typeof detail === 'string' ? detail : 'Claim could not be created. No confirmation was saved. Try again.' })
     }
   }
-  function dismiss(id: string) {
+  async function dismiss(id: string) {
     if (busyId) return
-    saveDecision(key, id, 'dismissed')
-    setState(prev => prev.key !== key ? prev : { ...prev, rows: prev.rows.map(m => m.id === id ? { ...m, status: 'dismissed' } : m) })
+    const row = matches.find(m => m.id === id)
+    if (!row || row.status !== 'pending') return
+    const requestKey = key
+    setAction({ key, id, error: '' })
+    try {
+      if (mode === 'live') {
+        await api.put('/matches/dismissals', { lost_item_id: row.lostItem.id, found_item_id: row.foundItem.id })
+      } else {
+        saveDecision(key, id, 'dismissed')
+      }
+      setState(prev => prev.key !== requestKey ? prev : { ...prev, rows: prev.rows.map(m => m.id === id ? { ...m, status: 'dismissed' } : m) })
+      setAction({ key: requestKey, id: '', error: '' })
+    } catch {
+      setAction({ key: requestKey, id: '', error: 'Dismissal was not saved. Please retry.' })
+    }
+  }
+  async function restore(id: string) {
+    if (busyId) return
+    const row = matches.find(m => m.id === id)
+    if (!row || row.status !== 'dismissed') return
+    const requestKey = key
+    setAction({ key, id, error: '' })
+    try {
+      if (mode === 'live') {
+        await api.delete('/matches/dismissals', { data: { lost_item_id: row.lostItem.id, found_item_id: row.foundItem.id } })
+      } else {
+        try {
+          const decisions = readDecisions(key)
+          delete decisions[id]
+          localStorage.setItem(key, JSON.stringify(decisions))
+        } catch { /* optional browser storage */ }
+      }
+      setState(prev => prev.key !== requestKey ? prev : { ...prev, rows: prev.rows.map(m => m.id === id ? { ...m, status: 'pending' } : m) })
+      setAction({ key: requestKey, id: '', error: '' })
+    } catch {
+      setAction({ key: requestKey, id: '', error: 'Suggestion could not be restored. Please retry.' })
+    }
   }
   function resetReviews() {
+    if (mode !== 'dataset') return
     try { localStorage.removeItem(key) } catch { /* optional browser storage */ }
     setRevision(r => r + 1)
   }
   return { matches, mode, setMode, source, setSource, loading, error, busyId,
-    actionError: action.key === key ? action.error : '', confirm, dismiss, resetReviews,
+    actionError: action.key === key ? action.error : '', confirm, dismiss, restore, resetReviews,
     refresh: () => setRevision(r => r + 1),
     pendingCount: loading || error ? 0 : matches.filter(m => m.status === 'pending').length }
 }

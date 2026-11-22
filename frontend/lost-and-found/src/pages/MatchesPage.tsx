@@ -27,7 +27,7 @@ export function MatchesPage({ controller }: { controller: MatchesController }) {
         <Info size={14} className="text-[#6B6560] shrink-0 mt-0.5" />
         <p className="font-mono text-[11px] text-[#6B6560] leading-relaxed">
           Up to three candidates per lost report are shown at scores of 70/100 or higher. Robust matching compares description meaning and checks specific conflicting details. Combined mode fuses text and image ranks when both photos are usable. Missing images fall back to text. Images cannot override text eligibility or detected conflicts.
-          {mode === 'live' ? 'Live suggestions use your open lost reports and visible found reports. Create a claim to begin ownership verification. Dismissals are saved in this browser.' : 'Dataset decisions are saved in this browser only. They do not create claims or notify anyone.'}
+          {mode === 'live' ? 'Live suggestions use your open lost reports and visible found reports. Create a claim to begin ownership verification. Dismissals are saved to your account and shared across devices.' : 'Dataset decisions are saved in this browser only. They do not create claims or notify anyone.'}
         </p>
       </div>
 
@@ -48,8 +48,9 @@ export function MatchesPage({ controller }: { controller: MatchesController }) {
           </select>
         </label>
         <button onClick={controller.refresh} disabled={loading || !!busyId} className="font-mono text-xs underline">Refresh matches</button>
-        <button onClick={controller.resetReviews} disabled={loading || !!busyId} className="font-mono text-xs underline">Reset browser reviews</button>
+        {mode === 'dataset' && <button onClick={controller.resetReviews} disabled={loading || !!busyId} className="font-mono text-xs underline">Reset browser reviews</button>}
       </div>
+      {mode === 'live' && matches.some(m => m.dismissalSyncAvailable === false) && <p role="status" className="px-8 py-4">Saving dismissals is currently unavailable. You can still view suggestions and create claims.</p>}
       {actionError && <p role="alert" className="px-8 py-4 text-red-700">{actionError}</p>}
 
       {/* Filter tabs */}
@@ -84,7 +85,8 @@ export function MatchesPage({ controller }: { controller: MatchesController }) {
               key={match.id}
               match={match}
               onConfirm={() => { void controller.confirm(match.id) }}
-              onDismiss={() => controller.dismiss(match.id)}
+              onDismiss={() => { void controller.dismiss(match.id) }}
+              onRestore={() => { void controller.restore(match.id) }}
               live={mode === 'live'}
               busy={!!busyId}
             />
@@ -95,8 +97,8 @@ export function MatchesPage({ controller }: { controller: MatchesController }) {
   )
 }
 
-function MatchBlock({ match, onConfirm, onDismiss, live, busy }: {
-  match: ItemMatch; live: boolean; busy: boolean; onConfirm: () => void; onDismiss: () => void
+function MatchBlock({ match, onConfirm, onDismiss, onRestore, live, busy }: {
+  match: ItemMatch; live: boolean; busy: boolean; onConfirm: () => void; onDismiss: () => void; onRestore: () => void
 }) {
   const score = match.score
   const scoreColor = score >= 85 ? '#06C167' : score >= 70 ? '#F59E0B' : '#C4BAA6'
@@ -179,7 +181,7 @@ function MatchBlock({ match, onConfirm, onDismiss, live, busy }: {
             {live ? 'Create a claim to begin verification. A suggestion does not prove ownership.' : 'Review this dataset candidate. Your choice is saved in this browser.'}
           </p>
           <div className="flex gap-2">
-            <button disabled={busy} onClick={onDismiss} className="border border-[#0E0D0B]/20 px-3 py-1.5 text-xs font-mono uppercase flex items-center gap-1 hover:bg-[#0E0D0B]/5">
+            <button disabled={busy || (live && match.dismissalSyncAvailable === false)} onClick={onDismiss} className="border border-[#0E0D0B]/20 px-3 py-1.5 text-xs font-mono uppercase flex items-center gap-1 hover:bg-[#0E0D0B]/5">
               <XCircle size={13} /> Not mine
             </button>
             <button disabled={busy} onClick={onConfirm} className="bg-[#06C167] text-[#0E0D0B] font-bold px-3 py-1.5 text-xs font-mono uppercase flex items-center gap-1 hover:bg-[#06C167]/90">
@@ -189,6 +191,7 @@ function MatchBlock({ match, onConfirm, onDismiss, live, busy }: {
         </div>
       )}
 
+      {match.status === 'dismissed' && <div className="px-8 py-4"><button disabled={busy} onClick={onRestore} className="font-mono text-xs underline">Restore suggestion</button></div>}
       {match.status === 'confirmed' && (
         <div className="px-8 py-4 border-t border-[#06C167] bg-[#06C167]/10 flex items-center gap-3">
           <CheckCircle2 size={16} className="text-[#06C167] shrink-0" />
