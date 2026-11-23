@@ -51,7 +51,7 @@ export function Dashboard({ navigate, user, isGuest }: DashboardProps) {
       <div className="border-b border-[#0E0D0B]/10 px-8 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="font-mono text-[10px] text-[#0E0D0B]/65 uppercase tracking-widest mb-1">
-            Campus Lost & Found Portal
+            {isGuestSession ? 'Campus Lost & Found - Guest Portal' : 'Campus Lost & Found - Portal'}
           </div>
           <h1 className="text-3xl font-black text-[#0E0D0B]" style={{ fontFamily: 'Fraunces, serif' }}>
             Dashboard
