@@ -43,6 +43,8 @@ export function ItemCard({ item, navigate, currentUserId }: ItemCardProps) {
     type: 'success'
   })
 
+  const [detailOpen, setDetailOpen] = useState(false)
+
   const handleActionClick = async (e: React.MouseEvent) => {
     e.stopPropagation() // Prevents card's row onClick from firing
     try {
@@ -77,7 +79,7 @@ export function ItemCard({ item, navigate, currentUserId }: ItemCardProps) {
   return (
     <>
     <div
-      onClick={() => navigate('detail', item.id)}
+      onClick={() => setDetailOpen(true)}
       className="border-b border-[#0E0D0B]/10 px-8 py-4 bg-[#FAF6EC] hover:bg-[#0E0D0B]/5 transition-colors cursor-pointer flex flex-col md:grid gap-4 items-start md:items-center"
       style={{ gridTemplateColumns: '80px 1fr 140px 140px 90px 130px' }}
     >
@@ -211,6 +213,97 @@ export function ItemCard({ item, navigate, currentUserId }: ItemCardProps) {
               >
                 {modalState.type === 'success' ? 'Got It' : 'Close'}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {detailOpen && (
+        <div
+          onClick={() => setDetailOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0E0D0B]/60 backdrop-blur-xs"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-[#FAF6EC] border border-[#0E0D0B] shadow-2xl max-w-lg w-full p-6 flex flex-col gap-4"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-[#0E0D0B]/10 pb-3">
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`font-mono text-[10px] px-2 py-0.5 uppercase tracking-wider font-bold ${
+                      item.type === 'lost' ? 'bg-[#D93B2B] text-[#FAF6EC]' : 'bg-[#06C167] text-[#0E0D0B]'
+                    }`}
+                  >
+                    {item.type}
+                  </span>
+                  <span className="font-mono text-[10px] text-[#0E0D0B]/65 uppercase">
+                    [{item.category}]
+                  </span>
+                </div>
+                <h2 className="font-bold text-lg text-[#0E0D0B]" style={{ fontFamily: 'Fraunces, serif' }}>
+                  {item.title}
+                </h2>
+              </div>
+              <button
+                onClick={() => setDetailOpen(false)}
+                className="text-[#0E0D0B]/50 hover:text-[#0E0D0B] transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {item.imageUrl && (
+              <img
+                src={item.imageUrl}
+                alt={item.title}
+                className="w-full max-h-64 object-cover border border-[#0E0D0B]/10"
+              />
+            )}
+
+            <p className="text-sm text-[#0E0D0B]/85 leading-relaxed whitespace-pre-wrap">
+              {item.description}
+            </p>
+
+            <div className="grid grid-cols-2 gap-2 border-y border-[#0E0D0B]/10 py-3 font-mono text-xs text-[#0E0D0B]/70">
+              <div>Location: {item.location}</div>
+              <div>Date: {item.date}</div>
+            </div>
+
+            {item.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {item.tags.map((tag, idx) => (
+                  <span
+                    key={idx}
+                    className="font-mono text-[10px] px-2 py-0.5 bg-[#0E0D0B] text-[#FAF6EC] uppercase"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="pt-2 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDetailOpen(false)}
+                className="font-mono text-[10px] uppercase tracking-widest px-4 py-1.5"
+              >
+                Close
+              </Button>
+              {!isUserItem && !isMatched && item.type === 'found' && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={e => {
+                    setDetailOpen(false)
+                    void handleActionClick(e)
+                  }}
+                  className="font-mono text-[10px] uppercase tracking-widest px-4 py-1.5"
+                >
+                  <ShieldCheck size={12} /> Claim Item
+                </Button>
+              )}
             </div>
           </div>
         </div>

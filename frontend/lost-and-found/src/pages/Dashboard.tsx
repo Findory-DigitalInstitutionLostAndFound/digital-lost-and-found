@@ -126,6 +126,13 @@ export function Dashboard({ navigate, user, isGuest }: DashboardProps) {
                   <span className={`font-mono text-[10px] px-2 py-0.5 uppercase font-bold ${report.item_type === 'lost' ? 'bg-[#D93B2B] text-white' : 'bg-[#06C167] text-[#0E0D0B]'}`}>
                     {report.item_type}
                   </span>
+                  {(report.blurred_image_url || (report as any).image_url) && (
+                    <img
+                      src={report.blurred_image_url || (report as any).image_url}
+                      alt={report.title}
+                      className="w-12 h-12 object-cover border border-[#0E0D0B]/10 shrink-0"
+                    />
+                  )}
                   <div>
                     <h4 className="font-bold text-sm" style={{ fontFamily: 'Fraunces, serif' }}>{report.title}</h4>
                     <span className="font-mono text-[10px] text-[#0E0D0B]/65">
