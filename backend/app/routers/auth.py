@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Response, Request, Depends, HTTPException
 from app.schemas.auth_schema import UserRegisterSchema, UserLoginSchema, SupabaseCallbackSchema, ForgotPasswordSchema, ResetPasswordSchema
 from app.service.auth_service import AuthService
@@ -6,12 +7,14 @@ from app.api.deps import get_current_user
 # create router for auth endpoints
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
+
 def set_auth_cookie(response: Response, token: str):
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True, # Make true so it can not be accessed by JavaScript
-        secure=True,  # True in production to ensure cookies are sent over HTTPS
+        secure=COOKIE_SECURE,  
         samesite="lax", #
         max_age=3600,  # 1 hour
         path="/" # Set the cookie for the entire domain
