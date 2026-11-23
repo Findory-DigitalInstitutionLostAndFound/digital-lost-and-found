@@ -113,7 +113,7 @@ async def create_guest_item(
     saved_item = GuestItemsService.save_guest_item(item_data, guest_info)
 
     # Queue email dispatch in background
-    match_link = f"http://localhost:5173/dashboard#access_token={guest_match_token}&type=guest_match"
+    match_link = f"https://fip-193-166-25-43.kaj.poutavm.fi/dashboard#access_token={guest_match_token}&type=guest_match"
     background_tasks.add_task(
         send_guest_match_email,
         email=guest_email.strip(),
