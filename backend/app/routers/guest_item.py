@@ -18,7 +18,7 @@ def set_guest_cookie(response, token: str):
         key=GUEST_COOKIE_NAME,
         value=token,
         httponly=True, # Make true so it can not be accessed by JavaScript
-        secure=True,  # True in production to ensure cookies are sent over HTTPS
+        secure=False,  # True in production to ensure cookies are sent over HTTPS
         samesite="lax", #
         max_age=3600,  # 1 hour
         path="/" # Set the cookie for the entire domain
@@ -170,6 +170,6 @@ async def guest_logout(response: Response):
         key=GUEST_COOKIE_NAME,
         path="/",
         samesite="lax",
-        secure=True 
+        secure=False 
     )
     return {"message": "Guest logged out successfully"}

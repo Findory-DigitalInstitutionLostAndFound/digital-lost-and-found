@@ -14,7 +14,7 @@ def set_auth_cookie(response: Response, token: str):
         key="access_token",
         value=token,
         httponly=True, # Make true so it can not be accessed by JavaScript
-        secure=COOKIE_SECURE,  
+        secure=False,  
         samesite="lax", #
         max_age=3600,  # 1 hour
         path="/" # Set the cookie for the entire domain
