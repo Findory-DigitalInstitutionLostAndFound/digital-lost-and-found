@@ -383,7 +383,7 @@ function ClaimConversation({ claim, currentUserId, isGuest, tab, message, onMess
 
   // Local form state
   const [meetupLocation, setMeetupLocation] = useState(
-    claim.meetup_location ?? (isHighValue ? 'Campus service point' : '')
+    claim.meetup_location ?? ''
   );
   const [meetupTime, setMeetupTime] = useState(
     claim.meetup_time ? claim.meetup_time.slice(0, 16) : ''
@@ -403,10 +403,10 @@ function ClaimConversation({ claim, currentUserId, isGuest, tab, message, onMess
   // Keep form in sync when claim data refreshes
   useEffect(() => {
     setMeetupLocation(
-      claim.meetup_location ?? (isHighValue ? 'Campus service point' : '')
+      claim.meetup_location ?? ''
     );
     setMeetupTime(claim.meetup_time ? claim.meetup_time.slice(0, 16) : '');
-  }, [claim.meetup_location, claim.meetup_time, isHighValue]);
+  }, [claim.meetup_location, claim.meetup_time]);
 
   const hasProposal = Boolean(claim.meetup_location && claim.meetup_time);
   const bothAccepted =
@@ -428,9 +428,8 @@ function ClaimConversation({ claim, currentUserId, isGuest, tab, message, onMess
   const savedTimeLocal = claim.meetup_time ? claim.meetup_time.slice(0, 16) : '';
   const savedLocation = claim.meetup_location ?? '';
 
-  const proposalChanged = isHighValue
-    ? meetupTime !== savedTimeLocal
-    : meetupLocation.trim() !== savedLocation.trim() || meetupTime !== savedTimeLocal;
+  const proposalChanged = 
+    meetupLocation.trim() !== savedLocation.trim() || meetupTime !== savedTimeLocal;
 
   const saveProposal = async () => {
     if (hasProposal && !proposalChanged) {
