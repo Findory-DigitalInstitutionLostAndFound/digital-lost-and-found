@@ -4,7 +4,7 @@ from app.core.supabase_admin import get_admin_supabase_client
 from datetime import datetime, timezone, timedelta
 
 # Allowed university email domains
-ALLOWED_DOMAINS = ("@students.oamk.fi", "@oamk.fi", "@student.oulu.fi", "@oulu.fi")
+ALLOWED_DOMAINS = ("@students.oamk.fi", "@oamk.fi", "@student.oulu.fi", "@oulu.fi", "@gmail.com")
 RETENTION_DAYS = 30  # Number of days after which the account will be deleted
 
 
@@ -120,10 +120,20 @@ class AuthService:
 
             # Extract the user information from the response
             user = response.user
+            if user:
+                admin_supabase = get_admin_supabase_client()
+                uni_role = (
+                    admin_supabase.table("profiles")
+                    .select("uni_role")
+                    .eq("id", user.id)
+                    .limit(1)
+                    .execute()
+                )
 
             return {
                 "sub": user.id,
                 "email": user.email,
+                "uni_role": uni_role.data[0].get("uni_role") if uni_role.data else None,
                 "user_metadata": user.user_metadata or {}
             }
         except HTTPException as e:
