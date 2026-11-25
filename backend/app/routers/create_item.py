@@ -8,7 +8,7 @@ from app.service.create_items_service import CreateItemsService
 from app.service.image_redaction_service import redact_sensitive_areas
 import uuid
 
-router = APIRouter()
+router = APIRouter(tags=["Items"])
 
 @router.post("/create-items")
 async def create_item(

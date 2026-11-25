@@ -4,7 +4,7 @@ from app.service.create_claim_service import CreateClaimService
 from app.schemas.claim_schema import CreateClaimSchema
 from app.api.claim_auth import resolve_claim_actor
 
-router = APIRouter()
+router = APIRouter(tags=["Claims"])
 
 @router.post("/create-claim")
 async def create_claim(

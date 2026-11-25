@@ -3,7 +3,7 @@ from app.api.deps import get_current_user
 from app.service.fetch_items_service import FetchItemsService
 from app.service.guest_items_service import GUEST_COOKIE_NAME, GuestItemsService
 
-router = APIRouter()
+router = APIRouter(tags=["Items"])
 
 #if a authenticated user fetch all items, if a guest user fetch only items match to his lost item tags
 @router.get("/items")

@@ -6,7 +6,7 @@ from app.schemas.claim_schema import StatusUpdateSchema, MeetupUpdateSchema
 from typing import Optional
 from app.api.claim_auth import resolve_claim_actor
 
-router = APIRouter()
+router = APIRouter(tags=["Claims"])
 
 # Endpoint to fetch claims for the current user
 @router.get("/claims")

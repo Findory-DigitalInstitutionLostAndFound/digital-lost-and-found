@@ -6,7 +6,7 @@ from app.service.qrServices import QrService
 from app.schemas.claim_schema import QRVerifyRequest
 from app.api.claim_auth import resolve_claim_actor
 
-router = APIRouter()
+router = APIRouter(tags=["Claims"])
 # route to generate QR code for a approved claim
 @router.post("/claims/{claim_id}/generate_qr")
 async def generate_qr_code(
