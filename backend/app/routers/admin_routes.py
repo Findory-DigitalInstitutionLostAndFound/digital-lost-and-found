@@ -3,7 +3,7 @@ from fastapi import APIRouter, Header, HTTPException, Request
 from app.service.cleanup_service import cleanup_old_item_images
 from app.service.admin_service import AdminService
 from app.api.deps import get_current_user
-from app.schemas.admin_schema import AssignAdminListSchema
+from app.schemas.admin_schema import AssignAdminListSchema, UpdateAdminSchema
 
 router = APIRouter(tags=["Admin"])
 
@@ -47,5 +47,22 @@ async def assign_admin_role(request: Request, payload: AssignAdminListSchema):
     
     # Assign admin role to the specified staff user
     result = await AdminService.assign_admin_role(access_token=access_token, user_id=user_id, payload=payload)
+    
+    return {"message": result}
+
+# Route to update the admin role of a staff user
+@router.post("/admin/update-admin-role")
+async def update_admin_role(request: Request, payload: UpdateAdminSchema):
+    access_token = request.cookies.get("access_token")
+    if not access_token:
+            raise HTTPException(status_code=401, detail="Not authenticated. Access token is missing.")
+    
+    current_user = await get_current_user(request)
+    user_id = current_user.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid user session. User ID is missing.")
+    
+    # Update the admin role of the specified staff user
+    result = await AdminService.update_admin_role(access_token=access_token, user_id=user_id, payload=payload)
     
     return {"message": result}

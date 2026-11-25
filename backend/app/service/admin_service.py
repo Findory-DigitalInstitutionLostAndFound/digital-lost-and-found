@@ -77,4 +77,35 @@ class AdminService:
                 status_code=500, 
                 detail=f"An error occurred while assigning admin role: {str(e)}"
             )
-        
+
+    @staticmethod
+    async def update_admin_role(access_token: str, user_id: str, payload):
+        try:
+            await AdminService._verify_super_admin(access_token, user_id)
+
+            # Determine the next service point based on the role
+            next_service_point = None if payload.uni_role == "user" else payload.service_point
+            admin_supabase = get_admin_supabase_client()
+            # Update the staff user's role to admin
+            update_response = (
+                admin_supabase
+                .table("profiles")
+                .update({"uni_role": payload.uni_role, "service_point": next_service_point})
+                .eq("id", payload.user_id)
+                .execute()
+            )
+            if not update_response.data:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"User not found for id {payload.user_id}."
+                )
+            
+            return "Admin role updated successfully."
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"Error updating admin role: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while updating admin role: {str(e)}"
+            )
