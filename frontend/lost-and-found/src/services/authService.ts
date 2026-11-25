@@ -22,6 +22,7 @@ export type UserInfo = {
   email: string,
   name: string,
   phone: string,
+  uni_role: string,
   role: string,
   item_id?: string
 };
@@ -78,12 +79,14 @@ export const authService = {
             email: string;
             full_name: string;
             phone: string;
+            uni_role: string;
         }>('/auth/me');
         return {
             user_id: response.data.user_id,
             email: response.data.email,
             name: response.data.full_name,
             phone: response.data.phone,
+            uni_role: response.data.uni_role, 
             role: 'user' // Mark this user as a regular user
         };
     },
