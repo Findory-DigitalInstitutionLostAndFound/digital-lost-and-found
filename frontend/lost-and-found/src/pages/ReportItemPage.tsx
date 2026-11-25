@@ -9,6 +9,7 @@ const PRIVACY_PATTERNS = [
   { pattern: /\b\d{3}-\d{2}-\d{4}\b/, label: 'SSN' },
   { pattern: /\b(?:\d[ -]*?){13,16}\b/, label: 'Credit Card Number' },
 ]
+const SERVICE_POINTS = ['Kontinkangas service point', 'Linnanmaa service point']
 
 interface Props { 
   mode: 'lost' | 'found'; 
@@ -28,6 +29,7 @@ export function ReportItemPage({ mode, navigate, isGuest = false }: Props) {
     category: '',
     location: '',
     date: new Date().toISOString().split('T')[0],
+    drop_off_location: '',
   })
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
@@ -94,6 +96,11 @@ export function ReportItemPage({ mode, navigate, isGuest = false }: Props) {
   const handleSubmit = async () => {
     if (privacyWarning) return
 
+    if (mode === 'found' && !form.drop_off_location.trim()) {
+      setErrors(prev => ({ ...prev, dropOffLocation: 'Drop-off service point is required' }))
+      return
+    }
+
     try{
       setLoading(true)
       setErrors({})
@@ -109,6 +116,7 @@ export function ReportItemPage({ mode, navigate, isGuest = false }: Props) {
         image: imageFile,
         item_type: mode,
         isGuest: isGuest, //routes the payload to the correct `/guest/create-item` endpoint
+        ...(mode === 'found' && { drop_off_location: form.drop_off_location }),
         ...(isGuest && {
           guest_name: form.name,
           guest_email: form.email,
@@ -132,12 +140,13 @@ export function ReportItemPage({ mode, navigate, isGuest = false }: Props) {
         category: '',
         location: '',
         date: new Date().toISOString().split('T')[0],
+        drop_off_location: '',
       })
 
-      // Wait 2.5 seconds so the user can read the message
+      // Wait 7 seconds so the user can read the message
       setTimeout(() => {
         navigate(isGuest ? 'guest' : 'dashboard')
-      }, 3500)
+      }, 7000)
 
     } catch (err: any) {
       const detail = err.response?.data?.detail
@@ -391,6 +400,27 @@ export function ReportItemPage({ mode, navigate, isGuest = false }: Props) {
               </div>
             )}
           </div>
+
+          {mode === 'found' && (
+            <div className="flex flex-col gap-1.5">
+              <label className="font-mono text-[10px] uppercase tracking-widest">
+                Drop-off Service Point
+              </label>
+              <select
+                value={form.drop_off_location}
+                onChange={e => setForm(f => ({ ...f, drop_off_location: e.target.value }))}
+                className="w-full h-11 px-3 font-mono text-xs bg-background border border-[#0E0D0B]/20 text-[#0E0D0B] focus:outline-none"
+              >
+                <option value="">[SELECT DROP-OFF POINT]</option>
+                {SERVICE_POINTS.map(point => (
+                  <option key={point} value={point}>[{point.toUpperCase()}]</option>
+                ))}
+              </select>
+              {errors.dropOffLocation && (
+                <p className="font-mono text-[10px] text-[#D93B2B]">{errors.dropOffLocation}</p>
+              )}
+            </div>
+          )}
 
           {/* Loading / message / error */}
           {loading && (

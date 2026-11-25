@@ -9,6 +9,7 @@ export type ReportItemData = {
     tags: string[];       
     image: File | null; // image file, can be null
     item_type: string; // "found" or "lost"
+    drop_off_location?: string; // Optional drop-off location for found items
     isGuest?: boolean; // Optional flag to indicate guest submission
     guest_name?: string; 
     guest_email?: string; 
@@ -33,6 +34,10 @@ export const reportItemService = {
 
         if (data.image) {
             formData.append('image', data.image);
+        }
+
+        if (data.item_type === 'found' && data.drop_off_location) {
+            formData.append('drop_off_location', data.drop_off_location);
         }
 
         // Append guest fields if this is a guest submission
