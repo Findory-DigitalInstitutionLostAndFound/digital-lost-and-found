@@ -1,0 +1,11 @@
+from pydantic import BaseModel, Field
+
+# the payload could be 2 or 3 or more admins. so here is the one admin
+class AssignAdminSchema(BaseModel):
+    user_id: str
+    email: str
+    service_point: str
+
+# here is the list of admins to be assigned
+class AssignAdminListSchema(BaseModel):
+    admins: list[AssignAdminSchema] = Field(..., min_length=1)
