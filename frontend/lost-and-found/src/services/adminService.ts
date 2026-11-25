@@ -15,6 +15,12 @@ export type Admin = {
     service_point: string;
 };
 
+export type UpdateAdminPayload = {
+    user_id: string;
+    uni_role: "user" | "admin";
+    service_point: string | null;
+};
+
 export const adminService = {
     async fetchAllStaffUsers(): Promise<StaffUser[]> {
         const response = await api.get<{ staff_users: StaffUser[] }>('/admin/fetch-all-staff-users');
@@ -24,8 +30,8 @@ export const adminService = {
         const response = await api.post('/admin/assign-admin-role', { admins: assignAdminList });
         return response.data;
     },
-    async updateAdminRole(admin: Admin): Promise<{ message: string }> {
-        const response = await api.post('/admin/update-admin-role', admin);
+    async updateAdminRole(payload: UpdateAdminPayload): Promise<{ message: string }> {
+        const response = await api.post('/admin/update-admin-role', payload);
         return response.data;
     }
 }
