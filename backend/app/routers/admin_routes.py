@@ -83,3 +83,19 @@ async def confirm_item_dropoff(request: Request, payload: DropOffQRSchema):
     result = await AdminService.confirm_item_dropoff(access_token=access_token, user_id=user_id, qr_token=payload.qr_token)
     
     return {"message": result}
+
+@router.post("/admin/verify_qr_handover")
+async def verify_qr_handover(request: Request, payload: DropOffQRSchema):
+    access_token = request.cookies.get("access_token")
+    if not access_token:
+            raise HTTPException(status_code=401, detail="Not authenticated. Access token is missing.")
+    
+    current_user = await get_current_user(request)
+    user_id = current_user.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid user session. User ID is missing.")
+    
+    # Verify QR code and complete handover
+    result = await AdminService.verify_qr_handover(access_token=access_token, user_id=user_id, qr_token=payload.qr_token)
+    
+    return {"message": result}
