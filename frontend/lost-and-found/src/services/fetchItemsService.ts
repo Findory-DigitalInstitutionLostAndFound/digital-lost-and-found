@@ -15,6 +15,9 @@ export type Item = {
     event_timestamp: string;
     blurred_image_url: string | null;
     ai_tags: string[];
+    drop_off_location: string | null;
+    custody_status: string | null;
+    qr_token: string | null;
 }
 
 export const fetchItemsService = {

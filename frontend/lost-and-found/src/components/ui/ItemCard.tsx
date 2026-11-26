@@ -2,6 +2,7 @@ import { AlertCircle, CheckCircle2, ShieldCheck, User, X } from 'lucide-react'
 import { Button } from './Button'
 import { claimService } from '../../services/claimService'
 import { useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 
 export type Item = {
   id: number
@@ -14,6 +15,9 @@ export type Item = {
   category: string
   status: 'active' | 'matched' | 'resolved'
   imageUrl?: string
+  drop_off_location?: string | null
+  custody_status?: string | null
+  qr_token?: string | null
   user_id?: string | null
   guest_id?: string | null
 }
@@ -267,7 +271,32 @@ export function ItemCard({ item, navigate, currentUserId }: ItemCardProps) {
             <div className="grid grid-cols-2 gap-2 border-y border-[#0E0D0B]/10 py-3 font-mono text-xs text-[#0E0D0B]/70">
               <div>Location: {item.location}</div>
               <div>Date: {item.date}</div>
+
+              {item.drop_off_location && (
+                <div>Drop-off: {item.drop_off_location}</div>
+              )}
+
+              {item.custody_status && (
+                <div>
+                  Current status: {item.custody_status.replace(/_/g, " ")}
+                </div>
+              )}
             </div>
+
+            {/* QR Code kept separate */}
+            {item.qr_token && (
+              <div className="border border-[#0E0D0B]/10 bg-white/50 p-3 font-mono text-xs space-y-2 flex flex-col items-center">
+                <span className="uppercase tracking-widest text-[10px] text-[#0E0D0B]/50">
+                  QR Code
+                </span>
+                
+                <QRCodeSVG value={item.qr_token} size={100} />
+                
+                <p className="break-all text-[#0E0D0B]/70 text-[10px] text-center">
+                  {item.qr_token}
+                </p>
+              </div>
+            )}
 
             {item.tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">

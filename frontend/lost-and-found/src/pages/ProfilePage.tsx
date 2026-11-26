@@ -41,6 +41,9 @@ export function ProfilePage({ user, navigate, onDeleteAccount }: ProfilePageProp
             status: "active",
             imageUrl: i.blurred_image_url,
             user_id: i.user_id,
+            drop_off_location: i.drop_off_location,
+            custody_status: i.custody_status,
+            qr_token: i.qr_token
           }))
 
         setMyItems(formattedItems)
