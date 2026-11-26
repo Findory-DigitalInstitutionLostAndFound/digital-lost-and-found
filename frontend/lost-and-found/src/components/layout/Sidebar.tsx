@@ -7,6 +7,7 @@ const MOCK_NAV = [
   { label: 'Matches', page: 'matches', stamp: '03' },
   { label: 'Claims', page: 'claims', stamp: '04' },
   { label: 'Profile', page: 'profile', stamp: '05' },
+  { label: 'Admin', page: 'admin', stamp: '06' },
   { label: 'Report Lost', page: 'report-lost' },
   { label: 'Report Found', page: 'report-found' },
 ]
@@ -17,7 +18,7 @@ const GUEST_ALLOWED_PAGES = new Set(['dashboard', 'browse', 'matches', 'claims']
 interface SidebarProps {
   currentPage: string
   navigate: (page: string) => void
-  user?: { name: string; email: string; role?: string } | null
+  user?: { name: string; email: string; role?: string, uni_role?: string } | null
   logout?: () => void
   pendingMatchesCount?: number
   pendingClaimsCount?: number
@@ -39,7 +40,9 @@ export function Sidebar({
   const isGuestSession = isGuest || user?.role === 'guest'
   const navItems = isGuestSession
     ? MOCK_NAV.filter(item => GUEST_ALLOWED_PAGES.has(item.page))
-    : MOCK_NAV
+    : user?.uni_role === 'admin'
+    ? MOCK_NAV
+    : MOCK_NAV.filter(item => item.page !== 'admin')
 
   const NavContent = () => (
     <div className="flex flex-col h-full bg-[#0E0D0B] text-white">

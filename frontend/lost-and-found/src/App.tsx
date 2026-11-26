@@ -20,14 +20,15 @@ import './index.css'
 import { GuestPage } from './pages/GuestPage'
 import { type UserInfo } from './services/authService'
 import { guestService } from './services/guestService'
+import { AdminPage } from './pages/AdminPage'
 
 
-type Page = 'dashboard' | 'home' | 'browse' | 'login' | 'register' | 'matches' | 'report-lost' | 'report-found' | 'guest' | 'claims' | 'profile'
+type Page = 'dashboard' | 'home' | 'browse' | 'login' | 'register' | 'matches' | 'report-lost' | 'report-found' | 'guest' | 'claims' | 'profile' | 'admin'
 
 function AppContent() {
   const getInitialPage = (): Page => {
     const path = window.location.pathname.replace('/', '') as Page
-    const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest', 'claims', 'profile']
+    const validPages: Page[] = ['dashboard', 'home', 'browse', 'login', 'register', 'matches', 'report-lost', 'report-found', 'guest', 'claims', 'profile', 'admin']
     return validPages.includes(path) ? path : 'home'
   }
   
@@ -217,6 +218,13 @@ function AppContent() {
         />
       case 'register':
         return <RegisterPage {...pageProps} />
+      case 'admin':
+        // only admins can access the admin page
+        if (user?.uni_role !== 'admin') {
+          console.log('user lole at case', user?.uni_role)
+          return <Dashboard {...pageProps} isGuest={isGuestSession} />
+        }
+        return <AdminPage navigate={navigate} user={user} />
       default:
         return <Dashboard {...pageProps} isGuest={isGuestSession}/>
     }

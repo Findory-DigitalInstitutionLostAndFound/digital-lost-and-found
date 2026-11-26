@@ -21,6 +21,10 @@ export type UpdateAdminPayload = {
     service_point: string | null;
 };
 
+export type DropOffPayload = {
+    qr_token: string;
+};
+
 export const adminService = {
     async fetchAllStaffUsers(): Promise<StaffUser[]> {
         const response = await api.get<{ staff_users: StaffUser[] }>('/admin/fetch-all-staff-users');
@@ -32,6 +36,11 @@ export const adminService = {
     },
     async updateAdminRole(payload: UpdateAdminPayload): Promise<{ message: string }> {
         const response = await api.post('/admin/update-admin-role', payload);
+        return response.data;
+    },
+    //@router.post("/admin/confirm-item-dropoff")
+    async confirmDropOff(payload: DropOffPayload): Promise<{ message: string }> {
+        const response = await api.post('/admin/confirm-item-dropoff', payload);
         return response.data;
     }
 }
