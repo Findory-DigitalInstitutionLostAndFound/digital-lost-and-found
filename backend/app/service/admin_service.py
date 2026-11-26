@@ -16,10 +16,10 @@ class AdminService:
             .single()
             .execute()
         )
-        if not caller_profile.data or caller_profile.data.get("uni_role") != "super_admin":
+        if not caller_profile.data or caller_profile.data.get("uni_role") != "admin":
             raise HTTPException(
                 status_code=403,
-                detail="Access denied. Only super admins can perform this action."
+                detail="Access denied. Only admins can perform this action."
             )
     @staticmethod
     async def fetch_all_staff_users(access_token: str, user_id: str):
@@ -138,7 +138,7 @@ class AdminService:
             update_response = (
                 admin_supabase
                 .table("items")
-                .update({"custody_status": "ready for pickup"})
+                .update({"custody_status": "available_for_pickup"})
                 .eq("id", item_id) 
                 .eq("qr_token", original_qr_token)
                 .execute()
