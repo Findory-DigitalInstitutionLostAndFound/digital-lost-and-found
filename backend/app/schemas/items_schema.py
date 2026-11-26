@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Literal
 
 class ItemCreateSchema(BaseModel):
     user_id: Optional[str] = None  # Make optional for guests
@@ -16,7 +16,7 @@ class ItemCreateSchema(BaseModel):
     original_image_url: Optional[str] = None
     blurred_image_url: Optional[str] = None
     status: str = "open"  # Default status is "Open"
-    drop_off_location: Optional[str] = None
+    drop_off_location: Optional[Literal["Linnanmaa service point", "Kontinkangas service point"]] = None
     custody_status: Optional[str] = None  
     # For guests 
     guest_id: Optional[str] = None

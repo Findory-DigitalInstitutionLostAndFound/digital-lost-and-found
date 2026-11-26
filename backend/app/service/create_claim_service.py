@@ -42,6 +42,8 @@ class CreateClaimService:
                 raise HTTPException(status_code=400, detail="You cannot claim your own item.")
             if auth_type == "guest" and item.get("guest_id") == actor_id:
                 raise HTTPException(status_code=400, detail="You cannot claim your own item.")
+            if item.get("item_type") == "lost":
+                raise HTTPException(status_code=400, detail="You cannot claim a lost item.")
 
             # prevent duplicate claims by the same user
             dup_query = supabase.table("claims").select("id").eq("item_id", item_id).eq("status", "pending")
