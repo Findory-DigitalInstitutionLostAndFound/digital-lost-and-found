@@ -109,3 +109,60 @@ class AdminService:
                 status_code=500,
                 detail=f"An error occurred while updating admin role: {str(e)}"
             )
+
+    @staticmethod
+    async def confirm_item_dropoff(access_token: str, user_id: str, qr_token: str):
+        try:
+            #confirm if the scanning user is admin
+            admim_supabase = get_admin_supabase_client()
+            user_profile = (
+                admim_supabase
+                .table("profiles")
+                .select("uni_role")
+                .eq("id", user_id)
+                .single()
+                .execute()
+            )
+            if user_profile.data.get("uni_role") != "admin":
+                raise HTTPException(
+                    status_code=403,
+                    detail="Only admins can confirm item dropoffs."
+                )
+
+            # split the recieved qr_token to get the item id and the original qr token f"findory:handover:{item.get('id')}:{qr_token}"
+            _,_, item_id, original_qr_token = qr_token.split(":")
+            await AdminService._verify_super_admin(access_token, user_id)
+
+            admin_supabase = get_admin_supabase_client()
+            # Update the custody status of the item to "ready for pickup" based on the QR token
+            update_response = (
+                admin_supabase
+                .table("items")
+                .update({"custody_status": "ready for pickup"})
+                .eq("id", item_id) 
+                .eq("qr_token", original_qr_token)
+                .execute()
+            )
+            if not update_response.data:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Item not found for QR token {qr_token}."
+                )
+            # set null the qr token after the item is dropoff confirmed
+            clear_qr_response = (
+                admin_supabase
+                .table("items")
+                .update({"qr_token": ""})
+                .eq("id", item_id)
+                .execute()
+            )
+            
+            return "Item dropoff confirmed and custody status updated successfully."
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"Error confirming item dropoff: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while confirming item dropoff: {str(e)}"
+            )

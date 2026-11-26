@@ -3,7 +3,7 @@ from fastapi import APIRouter, Header, HTTPException, Request
 from app.service.cleanup_service import cleanup_old_item_images
 from app.service.admin_service import AdminService
 from app.api.deps import get_current_user
-from app.schemas.admin_schema import AssignAdminListSchema, UpdateAdminSchema
+from app.schemas.admin_schema import AssignAdminListSchema, DropOffQRSchema, UpdateAdminSchema
 
 router = APIRouter(tags=["Admin"])
 
@@ -64,5 +64,22 @@ async def update_admin_role(request: Request, payload: UpdateAdminSchema):
     
     # Update the admin role of the specified staff user
     result = await AdminService.update_admin_role(access_token=access_token, user_id=user_id, payload=payload)
+    
+    return {"message": result}
+
+#Route to confirm item dropoff(when item dropoff anim scans the QR code of the item, it will trigger this route to update the custody status of the item to "ready for pickup")
+@router.post("/admin/confirm-item-dropoff")
+async def confirm_item_dropoff(request: Request, payload: DropOffQRSchema):
+    access_token = request.cookies.get("access_token")
+    if not access_token:
+            raise HTTPException(status_code=401, detail="Not authenticated. Access token is missing.")
+    
+    current_user = await get_current_user(request)
+    user_id = current_user.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid user session. User ID is missing.")
+    
+    # Confirm item dropoff and update custody status
+    result = await AdminService.confirm_item_dropoff(access_token=access_token, user_id=user_id, qr_token=payload.qr_token)
     
     return {"message": result}

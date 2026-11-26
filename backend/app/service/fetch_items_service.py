@@ -10,6 +10,10 @@ class FetchItemsService:
             items_response = supabase.table("items").select("id, user_id, guest_id, item_type, title, category, public_description, location_name, event_timestamp, blurred_image_url, ai_tags, drop_off_location, custody_status, qr_token").eq("status", "open").execute()
 
             items = items_response.data
+            # update qr_token with item id
+            for item in items:
+                if qr_token := item.get("qr_token"):
+                    item["qr_token"] = f"findory:handover:{item.get('id')}:{qr_token}"
 
             return {"items": items or []}
 

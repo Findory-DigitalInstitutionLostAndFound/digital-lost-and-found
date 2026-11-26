@@ -15,3 +15,6 @@ class UpdateAdminSchema(BaseModel):
     user_id: str
     uni_role: Literal["admin", "user"] 
     service_point: str | None 
+
+class DropOffQRSchema(BaseModel):
+    qr_token: str
