@@ -1,3 +1,5 @@
+import secrets
+
 from fastapi import HTTPException, UploadFile
 from app.core.supabase_user import get_user_supabase_client
 from app.schemas.items_schema import ItemCreateSchema
@@ -43,6 +45,9 @@ class CreateItemsService:
         try:
             supabase = get_user_supabase_client(access_token)
             data = item_data.model_dump()  # Convert Pydantic model to dictionary
+            # Generate a secure token for the QR code and add it to the item data
+            secure_token = secrets.token_urlsafe(32)
+            data["qr_token"] = secure_token
             # Insert the found item into the "items" table
             response = supabase.table("items").insert(data).execute()
 
