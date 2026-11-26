@@ -24,7 +24,11 @@ export function BrowsePage({ navigate }: BrowsePageProps) {
     async function fetchBackendItems() {
       try {
         const backendItems = await fetchItemsService.fetchItems()
-        const formattedItems = backendItems.map((i: any) => ({
+        //set otem only custody status is not on the way 
+        const filteredItems = backendItems.filter(
+          (item) => item.custody_status !== 'on_the_way'
+        )
+        const formattedItems = filteredItems.map((i: any) => ({
           id: i.id,
           type: i.item_type,
           title: i.title,
@@ -37,6 +41,9 @@ export function BrowsePage({ navigate }: BrowsePageProps) {
           imageUrl: i.blurred_image_url,
           user_id: i.user_id,
           guest_id: i.guest_id,
+          drop_off_location: i.drop_off_location,
+          custody_status: i.custody_status,
+          qr_token: i.qr_token,
         }))
         setItems(formattedItems)
         try {
