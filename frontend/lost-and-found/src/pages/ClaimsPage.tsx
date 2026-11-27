@@ -9,12 +9,7 @@ import { handOverService } from '../services/handOverService';
 import { setupRealtime } from '../services/chatTokenService';
 
 type ClaimTab = 'mine' | 'incoming' | 'archived';
-const CAMPUS_SERVICE_POINTS = [
-    'Linnanmaa Campus - Oamk Designated Lost & Found Point',
-    'Linnanmaa Campus - University of Oulu Designated Lost & Found Point',
-    'Kontinkangas Campus - Oamk Designated Lost & Found Point',
-    'Kontinkangas Campus - University of Oulu Designated Lost & Found Point',
-  ];
+const CAMPUS_SERVICE_POINTS = ['Kontinkangas service point', 'Linnanmaa service point']
 
 interface ClaimsPageProps {
   navigate: (page: string) => void;
@@ -537,278 +532,209 @@ function ClaimConversation({ claim, currentUserId, isGuest, tab, message, onMess
       </div>
 
       <div className="px-6 md:px-8 py-8 space-y-4 min-h-70">
-        {claim.messages.map(entry => {
-          const isMine = entry.sender_user_id === currentUserId || (isGuest && entry.sender_user_id === currentUserId);
-          // Detect the AI-generated verification questions message and format it
-          const isAiQuestions =
-            entry.content.startsWith('Verification questions generated for ownership check:');
+        {[...claim.messages]
+          .sort(
+            (a, b) =>
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          )
+          .map(entry => {
+            const isMine =
+              entry.sender_user_id === currentUserId ||
+              entry.sender_guest_id === currentUserId;
 
-          let questions: string[] = [];
-          if (isAiQuestions) {
-            // Extract the numbered questions
-            const raw = entry.content
-              .replace('Verification questions generated for ownership check:', '')
-              .trim();
+            const isFromClaimant =
+              (entry.sender_user_id && entry.sender_user_id === claim.claimant_user_id) ||
+              (entry.sender_guest_id && entry.sender_guest_id === claim.claimant_guest_id);
 
-            questions = raw
-              .split(/\d+\.\s+/)          // split as numbered list
-              .map(q => q.trim())
-              .filter(Boolean);
-          }
-          return (
-            <div key={entry.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-xl border p-4 ${isMine ? 'bg-[#0E0D0B] text-[#FAF6EC] border-[#0E0D0B]' : 'bg-white border-[#0E0D0B]/20 text-[#0E0D0B]'}`}>
-                <div className={`font-mono text-[9px] uppercase tracking-widest mb-2 ${isMine ? 'text-[#FAF6EC]/60' : 'text-[#0E0D0B]/60'}`}>
-                  {isMine ? 'You' : 'User'} · {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            const isAiQuestions = entry.content.startsWith(
+              'Verification questions generated for ownership check:'
+            );
+
+            // Label
+            let senderLabel = 'Staff';
+            if (isMine) {
+              senderLabel = 'You';
+            } else if (isAiQuestions) {
+              senderLabel = 'System';
+            } else if (isFromClaimant) {
+              senderLabel = 'Claimant';
+            } else {
+              senderLabel = 'Staff';
+            }
+
+            const isOnMySide =
+              tab === 'incoming'
+                ? !isFromClaimant   // admin side has You, Staff and System
+                : isMine;           // claimant side hasonly You
+
+            // Parse AI questions
+            let questions: string[] = [];
+            if (isAiQuestions) {
+              const raw = entry.content
+                .replace('Verification questions generated for ownership check:', '')
+                .trim();
+              questions = raw
+                .split(/\d+\.\s+/)
+                .map(q => q.trim())
+                .filter(Boolean);
+            }
+
+            return (
+              <div
+                key={entry.id}
+                className={`flex ${isOnMySide ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-xl border p-4 ${
+                    isOnMySide
+                      ? 'bg-[#0E0D0B] text-[#FAF6EC] border-[#0E0D0B]'
+                      : 'bg-white border-[#0E0D0B]/20 text-[#0E0D0B]'
+                  }`}
+                >
+                  <div
+                    className={`font-mono text-[9px] uppercase tracking-widest mb-2 ${
+                      isOnMySide ? 'text-[#FAF6EC]/60' : 'text-[#0E0D0B]/60'
+                    }`}
+                  >
+                    {senderLabel} ·{' '}
+                    {new Date(entry.created_at).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </div>
+
+                  {isAiQuestions ? (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium leading-relaxed">
+                        Verification questions for ownership check:
+                      </p>
+                      <ol className="list-decimal list-inside space-y-2 text-sm leading-relaxed">
+                        {questions.map((q, idx) => (
+                          <li key={idx} className="pl-1">
+                            {q}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  ) : (
+                    <p className="text-sm leading-relaxed">{entry.content}</p>
+                  )}
+
+                  {entry.image_url && (
+                    <div className="mt-2">
+                      <img
+                        src={entry.image_url}
+                        alt="Attachment"
+                        className="max-w-full max-h-64 rounded border border-[#0E0D0B]/20 object-contain cursor-pointer"
+                        onClick={() => window.open(entry.image_url!, '_blank')}
+                      />
+                    </div>
+                  )}
                 </div>
-                {/*Ai generated message special formatting*/}
-                {isAiQuestions ? (
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium leading-relaxed">
-                      Verification questions for ownership check:
-                    </p>
-                    <ol className="list-decimal list-inside space-y-2 text-sm leading-relaxed">
-                      {questions.map((q, idx) => (
-                        <li key={idx} className="pl-1">
-                          {q}
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                ) : (
-                <p className="text-sm leading-relaxed">{entry.content}</p>
-                )}
-                {entry.image_url && (
-                  <div className="mt-2">
-                    <img src={entry.image_url} alt="Attachement" className="max-w-full max-h-64 rounded border border-[#0E0D0B]/20 object-contain cursor-pointer" onClick={() => window.open(entry.image_url!, '_blank')} />
-                  </div>
-                )}
+              </div>
+            );
+          })
+        }
+
+        {/* After approval*/}
+        {isApproved && (
+          <div className="mt-6 space-y-4">
+
+            {/* message as approved */}
+            <div className="border border-[#06C167] bg-[#06C167]/10 px-5 py-4">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center bg-[#06C167] text-[#0E0D0B]">
+                  <Check size={14} strokeWidth={3} />
+                </div>
+                <div>
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-[#06C167] mb-1">
+                    Claim approved
+                  </p>
+
+                  {isFoundPerson ? (
+                    // Admin message
+                    <>
+                      <h3 className="text-base font-bold text-[#0E0D0B]" style={{ fontFamily: 'Fraunces, serif' }}>
+                        Ownership verified
+                      </h3>
+                      <p className="mt-1 text-sm text-[#0E0D0B]/80 leading-relaxed">
+                        The claimant has been approved. When they arrive at the service point,
+                        open the <strong>Admin</strong> page and use the <strong>Handover</strong> tab
+                        to scan their QR code and complete the return.
+                      </p>
+                    </>
+                  ) : (
+                    // Claimant message
+                    <>
+                      <h3 className="text-base font-bold text-[#0E0D0B]" style={{ fontFamily: 'Fraunces, serif' }}>
+                        Your claim is approved
+                      </h3>
+                      <p className="mt-1 text-sm text-[#0E0D0B]/80 leading-relaxed">
+                        You can visit the service point to collect your item.
+                        Please bring your documents to verify your identity if needed at the service point.
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          );
-        })}
 
-        {/* MEETUP FORM (only after approve)*/}
-        {isApproved && (
-          <div className="mt-6 border border-[#0E0D0B]/20 bg-white p-4 space-y-3 max-w-xl">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-[#0E0D0B]/60">
-                Arrange meetup
-            </p>
-
-            {bothAccepted ? (
-              <div className="space-y-2">
-                <p className="text-sm text-[#06C167] font-medium">
-                  Meetup agreed: {claim.meetup_location} ·{' '}
-                  {claim.meetup_time
-                    ? claim.meetup_time.slice(0, 16).replace('T', ' ')
-                    : ''}
+            {/* For claimants: generate handover QR code */}
+            {!isFoundPerson && (
+              <div className="border border-[#0E0D0B]/15 bg-white p-5 space-y-3">
+                <p className="font-mono text-[10px] uppercase tracking-widest text-[#0E0D0B]/60">
+                  Handover QR
+                </p>
+                <p className="text-sm text-[#0E0D0B]/80 leading-relaxed">
+                  Generate a QR code to obtain your item at the service point.
+                  <br />
+                  <span className="text-[#D93B2B] font-medium">
+                    Attention: the QR code is valid for only 1.5 minutes.
+                    Generate it when you are at the service point.
+                  </span>
                 </p>
 
-                {isHighValue && !isFoundPerson && (
-                  <p className="text-xs text-[#0E0D0B]/70">
-                    Remember to bring your ID card. Staff at the service point may check it.
-                  </p>
+                <Button onClick={handleGenerateQr} disabled={isGeneratingQr}>
+                  {isGeneratingQr
+                    ? 'Generating…'
+                    : qrPayload
+                      ? 'Refresh QR'
+                      : 'Generate QR'}
+                </Button>
+
+                {isGeneratingQr && (
+                  <p className="text-xs text-[#0E0D0B]/50">Creating secure token…</p>
                 )}
 
-                {/* ========== CLAIMANT: generate QR ========== */}
-                {!isFoundPerson && (
-                  <div className="space-y-2 border border-[#0E0D0B]/15 p-3">
-                    <p className="font-mono text-[10px] uppercase tracking-widest text-[#0E0D0B]/60">
-                      Handover QR
+                {qrPayload && !isGeneratingQr && (
+                  <div className="flex flex-col items-center gap-2 pt-3">
+                    <QRCodeSVG value={qrPayload} size={180} />
+                    <p className="font-mono text-[10px] text-[#0E0D0B]/60">
+                      Valid until{' '}
+                      {qrExpiresAt
+                        ? new Date(qrExpiresAt).toLocaleString('fi-FI', {
+                            timeZone: 'Europe/Helsinki',
+                          })
+                        : '—'}
                     </p>
-                    <p className="text-xs text-[#0E0D0B]/70">
-                      Generate a QR when you meet. It expires quickly — refresh if needed.
-                    </p>
-
-                    <Button onClick={handleGenerateQr} disabled={isGeneratingQr}>
-                      {isGeneratingQr
-                        ? 'Generating…'
-                        : qrPayload
-                          ? 'Refresh QR'
-                          : 'Generate QR'}
-                    </Button>
-
-                    {isGeneratingQr && (
-                      <p className="text-xs text-[#0E0D0B]/50">Creating secure token…</p>
-                    )}
-
-                    {qrPayload && !isGeneratingQr && (
-                      <div className="flex flex-col items-start gap-2 pt-2">
-                        <QRCodeSVG value={qrPayload} size={180} />
-                        <p className="font-mono text-[10px] text-[#0E0D0B]/60">
-                          Valid until{' '}
-                          {qrExpiresAt
-                            ? new Date(qrExpiresAt).toLocaleString('fi-FI', {
-                                timeZone: 'Europe/Helsinki',
-                              })
-                            : '—'}
-                        </p>
-                        <p className="text-[10px] text-[#0E0D0B]/50 break-all max-w-xs">
-                          {qrPayload}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* ========== FOUND PERSON: scan or paste ========== */}
-                {isFoundPerson && (
-                  <div className="space-y-2 border border-[#0E0D0B]/15 p-3">
-                    <p className="font-mono text-[10px] uppercase tracking-widest text-[#0E0D0B]/60">
-                      Verify claimant
-                    </p>
-                    <p className="text-xs text-[#0E0D0B]/70">
-                      Scan the claimant&apos;s QR or paste the code. Do not hand over the
-                      item until verification succeeds.
-                    </p>
-
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        onClick={() => setShowScanner(s => !s)}
-                        disabled={isVerifyingQr}
-                      >
-                        {showScanner ? 'Hide camera' : 'Open camera scanner'}
-                      </Button>
-                    </div>
-
-                    {showScanner && (
-                      <QrScanner
-                        onScan={(text) => {
-                          setScanInput(text);
-                          setShowScanner(false);
-                        }}
-                        onError={(msg) => {
-                          console.error(msg);
-                          alert('Camera unavailable. Paste the QR text instead.');
-                          setShowScanner(false);
-                        }}
-                      />
-                    )}
-
-                    <input
-                      value={scanInput}
-                      onChange={e => setScanInput(e.target.value)}
-                      placeholder="Paste QR value (findory:handover:...)"
-                      className="w-full h-10 px-3 text-sm border border-[#0E0D0B]/20 bg-white"
-                    />
-
-                    <Button
-                      variant="found"
-                      onClick={handleVerifyQr}
-                      disabled={isVerifyingQr || !scanInput.trim()}
-                    >
-                      {isVerifyingQr ? 'Verifying…' : 'Verify QR & complete handover'}
-                    </Button>
                   </div>
                 )}
               </div>
-            ) : (
-              <>
-                {/*place */}
-                <div>
-                  <label className= "font-mono text-[10px] uppercase block mb-1">
-                    Campus Service Point
-                  </label>
-                  <select
-                    value={meetupLocation}
-                    onChange={e => setMeetupLocation(e.target.value)}
-                    disabled={(!canProposeFirst && !canCounter)}
-                    className="w-full h-10 px-3 text-sm border border-[#0E0D0B]/20 bg-white disabled:bg-[#0E0D0B]/5"
-                  >
-                    <option value="" disabled>
-                      Select a designated campus service point...
-                    </option>
-                    {CAMPUS_SERVICE_POINTS.map(point => (
-                      <option key={point} value={point}>
-                        {point}
-                      </option>
-                    ))}
-                  </select>
-
-                  <p className="mt-1 font-mono text-[10px] text-[#0E0D0B]/70">
-                    All handovers take place at designated campus lost &amp; found points during campus hours. Claimant might need to show ID to staff. Keep proof of ownership with you to show ownership if needed.
-                  </p>
-
-                  {isHighValue && (
-                    <p className="mt-1 font-mono text-[10px] text-[#D93B2B]">
-                      High-value item: Please verify the claimant&apos;s ID with a staff member before releasing the item. Do not hand it to a third party. Keep proof of ownership with you to show ownership if needed.
-                    </p>
-                  )}
-                </div>
-
-                {/* Time */}
-                <div>
-                  <label className="font-mono text-[10px] uppercase block mb-1">
-                    Date & time
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={meetupTime}
-                    onChange={e => setMeetupTime(e.target.value)}
-                    disabled={!canProposeFirst && !canCounter}
-                    className="w-full h-10 px-3 text-sm border border-[#0E0D0B]/20 bg-white disabled:bg-[#0E0D0B]/5"
-                  />
-                </div>
-
-                {/* Current proposal summary */}
-                {hasProposal && (
-                  <p className="text-xs text-[#0E0D0B]/70">
-                    Current proposal: <strong>{claim.meetup_location}</strong> at{' '}
-                    <strong>
-                      {claim.meetup_time
-                        ? claim.meetup_time.slice(0, 16).replace('T', ' ')
-                        : '—'}
-                    </strong>
-                  </p>
-                )}
-                {/* Who accepted */}
-                <p className="font-mono text-[10px] text-[#0E0D0B]/60">
-                  Found person:{' '}
-                  {claim.owner_accepted_meetup ? 'accepted' : 'waiting'} ·
-                  Claimant:{' '}
-                  {claim.claimant_accepted_meetup ? 'accepted' : 'waiting'}
-                </p>
-
-                {/* Buttons */}
-                <div className="flex flex-wrap gap-2">
-                  {/* First suggestion – only found person */}
-                  {canProposeFirst && (
-                    <Button onClick={saveProposal} disabled={isSavingMeetup}> {isSavingMeetup ? 'Suggesting...' : 'Suggest meetup'}</Button>
-                  )}
-
-                  {/* Counter – either side when not yet fully agreed */}
-                  {canCounter && (
-                    <Button onClick={saveProposal} disabled={!proposalChanged || isSavingMeetup}> {isSavingMeetup ? 'Suggesting...' : 'Suggest different '}</Button>
-                  )}
-
-                  {/* Accept current proposal */}
-                  {canAccept && (
-                    <Button variant="found" onClick={acceptProposal} disabled={isAcceptingMeetup || isSavingMeetup}>
-                      <Check size={14} /> {isAcceptingMeetup ? 'Accepting...' : 'Accept this meetup'}
-                    </Button>
-                  )}
-
-                  {/* Waiting states */}
-                  {!hasProposal && !isFoundPerson && (
-                    <p className="text-xs text-[#0E0D0B]/60">
-                      Waiting for the found person to suggest place and time.
-                    </p>
-                  )}
-                  {hasProposal && iAlreadyAccepted && !bothAccepted && (
-                    <p className="text-xs text-[#0E0D0B]/60">
-                      Waiting for the other person to accept.
-                    </p>
-                  )}
-                  {meetupError && (
-                    <p className="text-xs text-red-500">
-                      {meetupError}
-                    </p>
-                  )}
-                </div>
-              </>
             )}
-          </div>
+
+            {/* ADMIN: reminder */}
+            {isFoundPerson && (
+              <div className="border border-[#0E0D0B]/15 bg-white p-5">
+                <p className="font-mono text-[10px] uppercase tracking-widest text-[#0E0D0B]/60 mb-1">
+                  Next step
+                </p>
+                <p className="text-sm text-[#0E0D0B]/80 leading-relaxed">
+                  Use the <strong>Admin → Handover</strong> tab in the sidebar to scan the
+                  claimant’s QR and complete the handover.
+                </p>
+              </div>
+            )}
+          </div> 
         )}
       </div>
 
