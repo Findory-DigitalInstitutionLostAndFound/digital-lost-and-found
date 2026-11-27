@@ -1,5 +1,6 @@
 from fastapi import UploadFile, HTTPException
 from app.core.supabase_user import get_user_supabase_client
+from app.core.supabase_admin import get_admin_supabase_client
 from datetime import datetime, timezone
 import uuid
 
@@ -29,13 +30,16 @@ class UpdateClaimsService:
     def _get_roles(claim: dict, item: dict, actor: dict) -> tuple[bool, bool]:
         auth_type = actor["auth_type"]
         actor_id = actor["actor_id"]
-        if auth_type == "guest":
-            is_owner = item.get("guest_id") == actor_id
-            is_claimant = claim.get("claimant_guest_id") == actor_id
-        
-        is_claimant = claim.get("claimant_user_id") == actor_id
-        is_direct_owner = item.get("user_id") == actor_id
 
+        is_claimant = False
+        is_direct_owner = False
+
+        if auth_type == "guest":
+            is_claimant = claim.get("claimant_guest_id") == actor_id
+        else:
+            is_claimant = claim.get("claimant_user_id") == actor_id
+            is_direct_owner = item.get("user_id") == actor_id
+        
         # Check if this user is an admin assigned to the item's / claim's service point
         target_service_point = claim.get("service_point") or item.get("drop_off_location")
         in_service_custody = (
@@ -45,7 +49,7 @@ class UpdateClaimsService:
         )
 
         is_service_admin = False
-        if in_service_custody:
+        if in_service_custody and auth_type == "user":
             profile = UpdateClaimsService._get_admin_profile(actor) or {}
             is_service_admin = (
                 profile.get("uni_role") == "admin"
@@ -79,26 +83,10 @@ class UpdateClaimsService:
         claim = claim_response.data[0]
         item = claim.get("items") or {}
         return claim, item
-
-    
-    @staticmethod
-    def _load_claim_with_item(supabase, claim_id: str, item_fields: str = "user_id, guest_id") -> tuple[dict, dict]:
-        claim_response = (
-            supabase.table("claims")
-            .select(f"*, items({item_fields})")
-            .eq("id", claim_id)
-            .execute()
-        )
-        if not claim_response.data:
-            raise HTTPException(status_code=404, detail="Claim not found.")
-
-        claim = claim_response.data[0]
-        item = claim.get("items") or {}
-        return claim, item
     
     @staticmethod
     async def update_last_read_time(claim_id: str, actor: dict):
-        supabase = actor["supabase"]
+        supabase = get_admin_supabase_client() if actor["auth_type"] == "user" else actor["supabase"]
         claim, item = UpdateClaimsService._load_claim_with_item(supabase, claim_id, "user_id, guest_id")
         is_owner, is_claimant = UpdateClaimsService._get_roles(claim, item, actor)
 
@@ -120,7 +108,7 @@ class UpdateClaimsService:
 
     @staticmethod
     async def update_claim_status(claim_id: str, actor: dict, new_status: str):
-        supabase = actor["supabase"]
+        supabase = get_admin_supabase_client() if actor["auth_type"] == "user" else actor["supabase"]
         claim, item = UpdateClaimsService._load_claim_with_item(supabase, claim_id, "user_id, guest_id")
         is_owner, is_claimant = UpdateClaimsService._get_roles(claim, item, actor)
 
@@ -194,7 +182,7 @@ class UpdateClaimsService:
 
     @staticmethod
     async def send_message(claim_id: str, content: str, image_url: str | None, actor: dict):
-        supabase = actor["supabase"]
+        supabase = get_admin_supabase_client() if actor["auth_type"] == "user" else actor["supabase"]
         auth_type = actor["auth_type"]
         actor_id = actor["actor_id"]
 
