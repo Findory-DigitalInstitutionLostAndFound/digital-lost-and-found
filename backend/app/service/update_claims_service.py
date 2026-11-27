@@ -4,13 +4,27 @@ from datetime import datetime, timezone
 import uuid
 
 ALLOWED_CAMPUS_SERVICE_POINTS = {
-    "Linnanmaa Campus - Oamk Designated Lost & Found Point",
-    "Linnanmaa Campus - University of Oulu Designated Lost & Found Point",
-    "Kontinkangas Campus - Oamk Designated Lost & Found Point",
-    "Kontinkangas Campus - University of Oulu Designated Lost & Found Point",
+    'Kontinkangas service point',
+    'Linnanmaa service point'
 }
 
 class UpdateClaimsService:
+    @staticmethod
+    def _get_admin_profile(actor: dict) -> dict | None:
+        if actor.get("auth_type") != "user":
+            return None
+        access_token = actor.get("access_token")
+        if not access_token:
+            return None
+        user_sb = get_user_supabase_client(access_token)
+        res = (
+            user_sb.table("profiles")
+            .select("uni_role, service_point")
+            .eq("id", actor["actor_id"])
+            .single()
+            .execute()
+        )
+        return res.data
     @staticmethod
     def _get_roles(claim: dict, item: dict, actor: dict) -> tuple[bool, bool]:
         auth_type = actor["auth_type"]
@@ -18,11 +32,55 @@ class UpdateClaimsService:
         if auth_type == "guest":
             is_owner = item.get("guest_id") == actor_id
             is_claimant = claim.get("claimant_guest_id") == actor_id
-        else:
-            is_owner = item.get("user_id") == actor_id
-            is_claimant = claim.get("claimant_user_id") == actor_id
+        
+        is_claimant = claim.get("claimant_user_id") == actor_id
+        is_direct_owner = item.get("user_id") == actor_id
+
+        # Check if this user is an admin assigned to the item's / claim's service point
+        target_service_point = claim.get("service_point") or item.get("drop_off_location")
+        in_service_custody = (
+            item.get("item_type") == "found"
+            and bool(target_service_point)
+            and item.get("custody_status") in ("available_for_pickup", "handed_over")
+        )
+
+        is_service_admin = False
+        if in_service_custody:
+            profile = UpdateClaimsService._get_admin_profile(actor) or {}
+            is_service_admin = (
+                profile.get("uni_role") == "admin"
+                and profile.get("service_point") == target_service_point
+            )
+
+        # Once handed over to a service point, service-point admins manage the claim;
+        is_owner = is_service_admin if in_service_custody else is_direct_owner
         return is_owner, is_claimant
 
+    @staticmethod
+    def _load_claim_with_item(
+        supabase,
+        claim_id: str,
+        item_fields: str = "user_id, guest_id, item_type, drop_off_location, custody_status",
+    ) -> tuple[dict, dict]:
+        # Ensure required fields for service-point check are always present
+        required = {"user_id", "guest_id", "item_type", "drop_off_location", "custody_status"}
+        requested = {f.strip() for f in item_fields.split(",") if f.strip()}
+        select_fields = ", ".join(sorted(required | requested))
+
+        claim_response = (
+            supabase.table("claims")
+            .select(f"*, items({select_fields})")
+            .eq("id", claim_id)
+            .execute()
+        )
+        if not claim_response.data:
+            raise HTTPException(status_code=404, detail="Claim not found.")
+
+        claim = claim_response.data[0]
+        item = claim.get("items") or {}
+        return claim, item
+
+    
     @staticmethod
     def _load_claim_with_item(supabase, claim_id: str, item_fields: str = "user_id, guest_id") -> tuple[dict, dict]:
         claim_response = (

@@ -12,13 +12,26 @@ router = APIRouter(tags=["Claims"])
 @router.get("/claims")
 async def get_claims(request: Request):
     actor = await resolve_claim_actor(request)
-    
-    # Fetch claims( if the current user is the claiment)
+    # Anyone can have claims as a claimant
     claims_as_claimant = await FetchClaimsDetailsService.fetch_claims_details_as_claimant(actor)
+    claims_as_founder = []
 
-    # Fetch claims( if the current user is the founder)
-    claims_as_founder = await FetchClaimsDetailsService.fetch_claims_details_as_founder(actor)
+    # Only authenticated non-guest users can have a uni role
+    if actor["auth_type"] == "user":
+        token = request.cookies.get("access_token")
+        if not token:
+            raise HTTPException(status_code=401, detail="Not authenticated. Access token is missing.")
 
+        user_role_info = FetchClaimsDetailsService.get_user_role_info(actor["actor_id"], token) or {}
+
+        if user_role_info.get("uni_role") == "admin" and user_role_info.get("service_point"):
+            claims_as_founder = await FetchClaimsDetailsService.fetch_claims_details_as_founder(
+                actor, user_role_info["service_point"]
+            )
+
+    
+    print(f"Claims as claimant: {claims_as_claimant}")
+    print(f"Claims as founder: {claims_as_founder}")
     return {
         "claims_as_claimant": claims_as_claimant,
         "claims_as_founder": claims_as_founder
