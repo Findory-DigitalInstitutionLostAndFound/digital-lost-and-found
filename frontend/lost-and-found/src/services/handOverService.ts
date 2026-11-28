@@ -23,11 +23,11 @@ export const handOverService = {
     },
 
     // Verify qr code and complete the handover process
-    async verifyQr(claimId: string, qrPayload: string): Promise<VerifyQrResponse> {
+    async verifyQr(qrPayload: string): Promise<VerifyQrResponse> {
         const response = await api.post<VerifyQrResponse>(
-            `/claims/${claimId}/verify_qr`,
+            `/admin/verify_qr_handover`,
             {
-                qr_payload: qrPayload
+                qr_token: qrPayload
             }
         );
         return response.data;

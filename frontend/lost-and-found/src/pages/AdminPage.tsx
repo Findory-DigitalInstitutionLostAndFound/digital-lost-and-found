@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Package, Hand } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { QrScanner } from './QrScanner'  
-import { adminService } from '../services/adminService'       
+import { adminService } from '../services/adminService'   
+import { handOverService } from '../services/handOverService'    
 
 type AdminTab = 'dropoff' | 'handover'
 
@@ -31,7 +32,8 @@ export function AdminPage({ user }: AdminPageProps) {
             const response = await adminService.confirmDropOff({ qr_token: payload })
             setResult(response.message || 'Drop-off confirmed. Item added to inventory.')
         } else{
-            //later
+            const response = await handOverService.verifyQr(payload)
+            setResult(response.message || 'Handover confirmed. Item returned to owner.')
         }
 
         
@@ -58,84 +60,101 @@ export function AdminPage({ user }: AdminPageProps) {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-[#0E0D0B]/10 px-6 md:px-8 flex">
+      <div className="grid grid-cols-2 border-b border-[#0E0D0B]/10">
         <TabButton
           active={tab === 'dropoff'}
-          onClick={() => { setTab('dropoff'); setResult(null); setError(null); setScanInput('') }}
+          onClick={() => { setTab('dropoff'); setResult(null); setError(null); setScanInput(''); setShowScanner(false) }}
         >
-          <Package size={13} /> Drop-off
+          <Package size={14} /> Drop-off
         </TabButton>
         <TabButton
           active={tab === 'handover'}
-          onClick={() => { setTab('handover'); setResult(null); setError(null); setScanInput('') }}
+          onClick={() => { setTab('handover'); setResult(null); setError(null); setScanInput(''); setShowScanner(false) }}
         >
-          <Hand size={13} /> Handover
+          <Hand size={14} /> Handover
         </TabButton>
       </div>
 
       {/* Content */}
-      <div className="px-6 md:px-8 py-8 max-w-xl">
-        <div className="border border-[#0E0D0B]/20 bg-white p-5 space-y-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-[#0E0D0B]/60">
-            {tab === 'dropoff' ? 'Confirm item drop-off' : 'Confirm owner handover'}
-          </p>
+      <div className="px-6 md:px-8 py-8">
+        <div className="border border-[#0E0D0B]/15 bg-white">
+          {/* Title strip */}
+          <div className="border-b border-[#0E0D0B]/10 px-5 py-4 md:px-6">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[#0E0D0B]/50 mb-1">
+              {tab === 'dropoff' ? 'Inventory' : 'Return'}
+            </p>
+            <h2 className="text-lg font-bold" style={{ fontFamily: 'Fraunces, serif' }}>
+              {tab === 'dropoff' ? 'Confirm item drop-off' : 'Confirm owner handover'}
+            </h2>
+            <p className="mt-1 text-sm text-[#0E0D0B]/70 leading-relaxed max-w-2xl">
+              {tab === 'dropoff'
+                ? 'Scan the QR on the item when it is handed in at a campus service point.'
+                : 'Scan the claimant’s handover QR to complete the return. Code is valid for a short time only.'}
+            </p>
+          </div>
 
-          <p className="text-sm text-[#0E0D0B]/80">
-            {tab === 'dropoff'
-              ? 'Scan the QR on the item when it is handed in at a campus service point.'
-              : 'Scan the claimant’s handover QR to complete the return.'}
-          </p>
+          {/* Actions */}
+          <div className="px-5 py-5 md:px-6 space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                onClick={() => setShowScanner(s => !s)}
+                disabled={loading}
+              >
+                {showScanner ? 'Hide camera' : 'Open camera scanner'}
+              </Button>
+            </div>
 
-          <div className="flex flex-wrap gap-2">
+            {showScanner && (
+              <div className="overflow-hidden border border-[#0E0D0B]/15 bg-[#0E0D0B]/5">
+                <QrScanner
+                  onScan={handleScan}
+                  onError={(msg) => {
+                    setError(msg)
+                    setShowScanner(false)
+                  }}
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="font-mono text-[10px] uppercase tracking-widest text-[#0E0D0B]/50 block mb-1.5">
+                Or paste QR value
+              </label>
+              <input
+                value={scanInput}
+                onChange={e => setScanInput(e.target.value)}
+                placeholder="findory:..."
+                className="w-full h-11 px-3 text-sm border border-[#0E0D0B]/20 bg-[#FAF6EC] focus:outline-none focus:ring-2 focus:ring-[#0E0D0B]"
+              />
+            </div>
+
             <Button
-              type="button"
-              onClick={() => setShowScanner(s => !s)}
-              disabled={loading}
+              variant="found"
+              disabled={loading || !scanInput.trim()}
+              onClick={() => handleScan(scanInput.trim())}
+              className="w-full sm:w-auto"
             >
-              {showScanner ? 'Hide camera' : 'Open camera scanner'}
+              {loading ? 'Processing…' : tab === 'dropoff' ? 'Confirm Drop-off' : 'Confirm Handover'}
             </Button>
+
+            {result && (
+              <div className="flex items-start gap-2 p-4 border border-[#06C167] bg-[#06C167]/10 text-sm text-[#0E0D0B]">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[#06C167] shrink-0 pt-0.5">
+                  OK
+                </span>
+                <p>{result}</p>
+              </div>
+            )}
+            {error && (
+              <div className="flex items-start gap-2 p-4 border border-[#D93B2B] bg-[#D93B2B]/10 text-sm text-[#D93B2B]">
+                <span className="font-mono text-[10px] uppercase tracking-widest shrink-0 pt-0.5">
+                  Error
+                </span>
+                <p>{error}</p>
+              </div>
+            )}
           </div>
-
-          {showScanner && (
-            <QrScanner
-              onScan={handleScan}
-              onError={(msg) => {
-                setError(msg)
-                setShowScanner(false)
-              }}
-            />
-          )}
-
-          <div>
-            <label className="font-mono text-[10px] uppercase block mb-1">
-              Or paste QR value
-            </label>
-            <input
-              value={scanInput}
-              onChange={e => setScanInput(e.target.value)}
-              placeholder="findory:..."
-              className="w-full h-10 px-3 text-sm border border-[#0E0D0B]/20 bg-white"
-            />
-          </div>
-
-          <Button
-            variant="found"
-            disabled={loading || !scanInput.trim()}
-            onClick={() => handleScan(scanInput.trim())}
-          >
-            {loading ? 'Processing…' : tab === 'dropoff' ? 'Confirm Drop-off' : 'Confirm Handover'}
-          </Button>
-
-          {result && (
-            <div className="p-3 bg-[#06C167]/15 border border-[#06C167] text-sm text-[#0E0D0B]">
-              {result}
-            </div>
-          )}
-          {error && (
-            <div className="p-3 bg-[#D93B2B]/10 border border-[#D93B2B] text-sm text-[#D93B2B]">
-              {error}
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -154,10 +173,10 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-4 md:px-5 py-3.5 font-mono text-[10px] md:text-xs uppercase tracking-widest border-b-2 transition-colors whitespace-nowrap ${
+      className={`flex items-center justify-center gap-2 w-full py-4 font-mono text-[10px] md:text-xs uppercase tracking-widest border-b-2 transition-colors ${
         active
-          ? 'text-[#0E0D0B] border-[#06C167] bg-[#FAF6EC] font-bold'
-          : 'text-[#0E0D0B]/60 border-transparent hover:text-[#0E0D0B]'
+          ? 'text-[#0E0D0B] border-[#06C167] bg-white font-bold'
+          : 'text-[#0E0D0B]/55 border-transparent bg-transparent hover:text-[#0E0D0B] hover:bg-[#0E0D0B]/5'
       }`}
     >
       {children}

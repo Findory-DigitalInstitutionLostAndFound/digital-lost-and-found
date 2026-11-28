@@ -621,6 +621,10 @@ function ClaimConversation({ claim, currentUserId, isGuest, tab, message, onMess
                           })
                         : '—'}
                     </p>
+                    
+                    <p className="font-mono text-[10px] text-[#0E0D0B]/60">
+                      <span className="font-bold">{qrPayload}</span>
+                    </p>
                   </div>
                 )}
               </div>
