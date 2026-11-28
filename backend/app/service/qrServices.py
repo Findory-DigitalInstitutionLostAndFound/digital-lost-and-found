@@ -32,8 +32,6 @@ class QrService:
 
             if claim.get("status") != "approved":
                 raise HTTPException(status_code=400, detail="Claim is not approved yet")
-            if not claim.get("owner_accepted_meetup") or not claim.get("claimant_accepted_meetup"):
-                raise HTTPException(status_code=400, detail="Both parties must accept the meetup before generating QR code")
             
             updated = (
                 supabase.table("claims")
