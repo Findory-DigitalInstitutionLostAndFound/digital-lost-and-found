@@ -4,33 +4,39 @@ import { Button } from '../components/ui/Button';
 import { claimsService, type ClaimDetail } from '../services/claimMessageService';
 import { createClient } from '@supabase/supabase-js';
 import { QRCodeSVG } from 'qrcode.react';
-import { QrScanner } from './QrScanner';
 import { handOverService } from '../services/handOverService';
 import { setupRealtime } from '../services/chatTokenService';
 
 type ClaimTab = 'mine' | 'incoming' | 'archived';
-const CAMPUS_SERVICE_POINTS = ['Kontinkangas service point', 'Linnanmaa service point']
 
 interface ClaimsPageProps {
   navigate: (page: string) => void;
-  user?: { name: string; email: string; phone: string; user_id: string, role?: string } | null;
+  user?: { name: string; email: string; phone: string; user_id: string, role?: string, uni_role?: string } | null;
   refreshCounts?: () => void;
 }
 
 export function ClaimsPage({ user, refreshCounts }: ClaimsPageProps) {
   const currentUserId = user?.user_id ?? 'user-current';
   const isGuest = user?.role === 'guest';
+  const isAdmin = user?.uni_role === 'admin';
  
   const [claimantClaims, setClaimantClaims] = useState<ClaimDetail[]>([]);
   const [founderClaims, setFounderClaims] = useState<ClaimDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [tab, setTab] = useState<ClaimTab>('incoming');
+  const [tab, setTab] = useState<ClaimTab | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   
+  // set initial tab only once, when user is known
+  useEffect(() => {
+    if (tab !== null) return
+    if (!user) return
+    setTab(user.uni_role === 'admin' ? 'incoming' : 'mine')
+  }, [user, tab])
+
   // fetch claim on mount
   const fetchClaimsData = async (showLoader = true) => {
     try {
@@ -73,6 +79,7 @@ export function ClaimsPage({ user, refreshCounts }: ClaimsPageProps) {
     setTab(nextTab);
     setSelectedId(null);
     setMessage('');
+    fetchClaimsData(false)
   };
 
   const handleStatusChange = async (claimId: string, newStatus: string) => {
@@ -187,6 +194,15 @@ export function ClaimsPage({ user, refreshCounts }: ClaimsPageProps) {
     }
   };
 
+  // Show loading state if tab is not yet determined
+  if (tab === null) {
+    return (
+      <div className="px-8 py-20 text-center font-mono text-xs uppercase tracking-widest text-[#0E0D0B]/60">
+        Loading claims…:
+      </div>
+    )
+  }
+
   return (
     <div className="flex-1 min-h-screen bg-[#FAF6EC] text-[#0E0D0B]">
       <div className="border-b border-[#0E0D0B]/10 px-6 md:px-8 py-6">
@@ -196,11 +212,15 @@ export function ClaimsPage({ user, refreshCounts }: ClaimsPageProps) {
       </div>
 
       <div className="border-b border-[#0E0D0B]/10 px-6 md:px-8 flex overflow-x-auto">
-        <TabButton active={tab === 'mine'} onClick={() => selectTab('mine')}>My claims</TabButton>
-        <TabButton active={tab === 'incoming'} onClick={() => selectTab('incoming')}>
-          Claims to me
-          {pendingIncomingCount > 0 && <span className="bg-[#06C167] text-[#0E0D0B] px-1.5 py-0.5 text-[9px] font-bold ml-1.5">{pendingIncomingCount}</span>}
-        </TabButton>
+        {isAdmin && (
+          <TabButton active={tab === 'incoming'} onClick={() => selectTab('incoming')}>Claims to me</TabButton>
+        )}
+        {!isAdmin && (
+          <TabButton active={tab === 'mine'} onClick={() => selectTab('mine')}>
+            My claims
+            {pendingIncomingCount > 0 && <span className="bg-[#06C167] text-[#0E0D0B] px-1.5 py-0.5 text-[9px] font-bold ml-1.5">{pendingIncomingCount}</span>}
+          </TabButton>
+        )}
         <TabButton active={tab === 'archived'} onClick={() => selectTab('archived')}>Archived</TabButton>
       </div>
 
@@ -376,105 +396,11 @@ function ClaimConversation({ claim, currentUserId, isGuest, tab, message, onMess
   // Found person = owner side = "incoming" tab
   const isFoundPerson = tab === 'incoming';
 
-  // Local form state
-  const [meetupLocation, setMeetupLocation] = useState(
-    claim.meetup_location ?? ''
-  );
-  const [meetupTime, setMeetupTime] = useState(
-    claim.meetup_time ? claim.meetup_time.slice(0, 16) : ''
-  );
-  const [isSavingMeetup, setIsSavingMeetup] = useState(false);
-  const [isAcceptingMeetup, setIsAcceptingMeetup] = useState(false);
-  const [meetupError, setMeetupError] = useState<string | null>(null);
 
   const [qrPayload, setQrPayload] = useState<string | null>(null);
   const [qrExpiresAt, setQrExpiresAt] = useState<string | null>(null);
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
-  
-  const [scanInput, setScanInput] = useState('');
-  const [isVerifyingQr, setIsVerifyingQr] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
-
-  // Keep form in sync when claim data refreshes
-  useEffect(() => {
-    setMeetupLocation(
-      claim.meetup_location ?? ''
-    );
-    setMeetupTime(claim.meetup_time ? claim.meetup_time.slice(0, 16) : '');
-  }, [claim.meetup_location, claim.meetup_time]);
-
-  const hasProposal = Boolean(claim.meetup_location && claim.meetup_time);
-  const bothAccepted =
-    Boolean(claim.owner_accepted_meetup) &&
-    Boolean(claim.claimant_accepted_meetup);
-
-  // Found person must suggest first
-  const canProposeFirst = isFoundPerson && !hasProposal;
-  // Anyone can counter if there is a proposal and meetup not fully agreed
-  const canCounter = hasProposal && !bothAccepted;
-  // Accept if there is a proposal and this side has not accepted yet
-  const iAmOwner = isFoundPerson;
-  const iAlreadyAccepted = iAmOwner
-    ? Boolean(claim.owner_accepted_meetup)
-    : Boolean(claim.claimant_accepted_meetup);
-  const canAccept = hasProposal && !bothAccepted && !iAlreadyAccepted;
-  
-  // Detect if the form values have changed from the current proposal
-  const savedTimeLocal = claim.meetup_time ? claim.meetup_time.slice(0, 16) : '';
-  const savedLocation = claim.meetup_location ?? '';
-
-  const proposalChanged = 
-    meetupLocation.trim() !== savedLocation.trim() || meetupTime !== savedTimeLocal;
-
-  const saveProposal = async () => {
-    if (hasProposal && !proposalChanged) {
-      alert('Change the place or time before sending a new proposal.');
-      return;
-    }
-    const location = meetupLocation.trim();
-
-    if (!location || !meetupTime) {
-      setMeetupError('Please set place and time.');
-      return;
-    }
-
-    //check if meetup time is between 8am and 4pm
-    const timePart = meetupTime.split('T')[1] ?? '';
-    const [hours] = timePart.split(':').map(Number);
-    if (Number.isNaN(hours) || hours < 8 || hours >= 16) {
-      setMeetupError('Please set a time service points are available, between 8:00 AM and 4:00 PM.');
-      return;
-    }
-
-    try {
-      setIsSavingMeetup(true);
-      await claimsService.updateMeetupDetails({
-        claimId: claim.id,
-        location: location,
-        time: meetupTime
-      });
-      onRefresh();
-    } catch (err) {
-      console.error(err);
-      alert('Could not save meetup proposal.');
-    } finally {
-      setIsSavingMeetup(false);
-    }
-  };
-
-  const acceptProposal = async () => {
-    try {
-      setIsAcceptingMeetup(true);
-      await claimsService.acceptMeetup(claim.id);
-      onRefresh();
-    } catch (err) {
-      console.error(err);
-      alert('Could not accept meetup.');
-    } finally {
-      setIsAcceptingMeetup(false);
-    }
-  };
-
+    
   // function to generate QR code for handover
   const handleGenerateQr = async () => {
     try {
@@ -487,28 +413,6 @@ function ClaimConversation({ claim, currentUserId, isGuest, tab, message, onMess
       alert('Could not generate QR code.');
     } finally {
       setIsGeneratingQr(false);
-    }
-  };
-
-  // function to verify QR code and complete handover
-  const handleVerifyQr = async () => {
-    const value = scanInput.trim();
-    if (!value) {
-      alert('Scan or paste the QR code first.');
-      return;
-    }
-    try {
-      setIsVerifyingQr(true);
-      await handOverService.verifyQr(claim.id, value);
-      alert('Handover completed successfully.');
-      setShowScanner(false);
-      setScanInput('');
-      onRefresh();
-    } catch (err) {
-      console.error(err);
-      alert('QR verification failed. Check the code has not expired.');
-    } finally {
-      setIsVerifyingQr(false);
     }
   };
 
