@@ -65,7 +65,10 @@ class FetchClaimsDetailsService:
                 .select("id")
                 .eq("drop_off_location", service_point)
                 .eq("item_type", "found")
-                .eq("custody_status", "available_for_pickup")
+                .in_("custody_status", [
+                    "available_for_pickup",
+                    "handed_over"
+                ])
                 .execute()
             )
                 
